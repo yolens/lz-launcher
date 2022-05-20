@@ -5,15 +5,23 @@
 
 class Node : public Item
 {
-    //Q_OBJECT
+    Q_OBJECT
 public:
-    explicit Node(QGraphicsItem *parent = nullptr);
+    explicit Node(QObject *parent = nullptr);
+
+    virtual void createPoint() override;
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
+    virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
+    virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
+    virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
+    virtual void dropEvent(QGraphicsSceneDragDropEvent *event) override;
 signals:
 
+private:
+    QString m_name;
 };
 
 #endif // NODE_H

@@ -1,7 +1,6 @@
-#ifndef MAINWINDOWPLUGIN_H
+﻿#ifndef MAINWINDOWPLUGIN_H
 #define MAINWINDOWPLUGIN_H
 
-#include <QGenericPlugin>
 #include "IPlugin.h"
 #include "IMainWindow.h"
 #include "MainWindow.h"
@@ -19,6 +18,7 @@ public:
     //IPlugin
     virtual QObject* instance() override;
     virtual QUuid pluginUuid() const override;
+    virtual IPlugin::Type pluginType() const override;
     virtual void pluginInfo(IPluginInfo *pluginInfo) override;
     virtual bool initConnections(IPluginManager *pluginManager, int& initOrder) override;
     virtual bool initObjects() override;

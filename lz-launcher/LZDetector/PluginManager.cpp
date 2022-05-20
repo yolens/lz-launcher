@@ -1,4 +1,4 @@
-#include "PluginManager.h"
+﻿#include "PluginManager.h"
 #include <QUuid>
 #include <QDir>
 #include <QLibrary>
@@ -18,10 +18,14 @@ PluginManager* PluginManager::manager()
     return &ins;
 }
 
-void PluginManager::start()
+void PluginManager::init()
 {
     loadPlugins();
     initPlugins();
+}
+
+void PluginManager::start()
+{
     startPlugins();
 }
 void PluginManager::stop()
@@ -82,7 +86,10 @@ bool PluginManager::initPlugins()
     }//end while
 
     foreach(IPlugin* plugin, pluginOrder)
+    {
+        qDebug() << "init plugin: " << plugin->pluginUuid().toString() << m_pluginMap.value(plugin->pluginUuid().toString()).info->name << plugin->pluginType();
         plugin->initObjects();
+    }
     foreach(IPlugin* plugin, pluginOrder)
         plugin->initSettings();
 
@@ -160,6 +167,8 @@ void PluginManager::addPlugin(const QString& file)
 
                     plugin->pluginInfo(pluginItem.info);
                     m_pluginMap.insert(uuid.toString(), pluginItem);
+
+
                 }
                 else
                 {
@@ -199,4 +208,18 @@ void PluginManager::removePluginItem(const QUuid& uid, const QString& error)
         pluginItem.plugin->stopPlugin();
         m_releaseItems.push_back(pluginItem);
     }
+}
+
+QList<IPlugin*> PluginManager::getPluginsByType(IPlugin::Type type)
+{
+    QList<IPlugin*> list;
+    QHash<QString, PluginItem>::iterator it;
+    for (it = m_pluginMap.begin(); it != m_pluginMap.end(); it++)
+    {
+        if (type == it.value().plugin->pluginType())
+        {
+            list.push_back(it.value().plugin);
+        }
+    }
+    return list;
 }

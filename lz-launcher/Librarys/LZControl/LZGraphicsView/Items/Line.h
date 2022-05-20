@@ -5,21 +5,33 @@
 
 class Line : public Item
 {
-    //Q_OBJECT
+    Q_OBJECT
 public:
-    explicit Line(QGraphicsItem *parent = nullptr);
+    explicit Line(QObject *parent = nullptr);
+    virtual ~Line();
 
-    virtual void setSource(const Item *item) override;
-    virtual void setDest(const Item *item) override;
-
+    virtual void setSource(Item *item) override;
+    virtual void setDest(Item *item) override;
+    virtual Item* getSource() override;
+    virtual Item* getDest() override;
+    virtual void startTest() override;
+private:
+    void adjustLine();
+public:
+    QRectF boundingRect() const override;
 protected:
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    //virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+public slots:
+    void onAdjust();
 signals:
 
 private:
-    const Item *m_pSource = nullptr;
-    const Item *m_pDest = nullptr;
+    Item *m_pSource = nullptr;
+    Item *m_pDest = nullptr;
+    QPointF m_sourcePoint;
+    QPointF m_destPoint;
+
 };
 
 #endif // LINE_H

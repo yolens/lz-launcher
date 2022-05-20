@@ -1,6 +1,7 @@
-#include "MainWindowPlugin.h"
+﻿#include "MainWindowPlugin.h"
 
 MainWindowPlugin::MainWindowPlugin(QObject *parent)
+    : QObject(parent)
 {
     m_pMainWindow = new MainWindow();
     m_pMainWindow->hide();
@@ -14,6 +15,10 @@ QUuid MainWindowPlugin::pluginUuid() const
 {
     return MAINWINDOW_UUID;
 }
+IPlugin::Type MainWindowPlugin::pluginType() const
+{
+    return Type::Main;
+}
 void MainWindowPlugin::pluginInfo(IPluginInfo *pluginInfo)
 {
     pluginInfo->author = "yolens";
@@ -23,7 +28,7 @@ void MainWindowPlugin::pluginInfo(IPluginInfo *pluginInfo)
 bool MainWindowPlugin::initConnections(IPluginManager *pluginManager, int& initOrder)
 {
     Q_UNUSED(pluginManager);
-    initOrder = 1;
+    initOrder = Type::Main+1;
     return true;
 }
 bool MainWindowPlugin::initObjects()
@@ -36,6 +41,7 @@ bool MainWindowPlugin::initSettings()
 }
 bool MainWindowPlugin::startPlugin()
 {
+    m_pMainWindow->init();
     return true;
 }
 bool MainWindowPlugin::stopPlugin()
@@ -46,4 +52,5 @@ bool MainWindowPlugin::stopPlugin()
 void MainWindowPlugin::showWindow(const bool show)
 {
     m_pMainWindow->setVisible(show);
+
 }

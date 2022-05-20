@@ -1,6 +1,7 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include "ui_MainWindow.h"
-
+#include "IPlugin.h"
+#include "LZLib.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -8,10 +9,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    m_pView = new LZGraphicsView(this);
-    //setCentralWidget(m_pView);
-    m_pView->resize(600,400);
-    m_pView->move(30, 30);
+    m_pWindow = new LZWindow();
+    m_pWindow->resize(1024, 768);
+    m_pWindow->hide();
 }
 
 MainWindow::~MainWindow()
@@ -19,14 +19,21 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::init()
 {
-    m_pView->addItem(Item::ItemType::Node, QPoint(130,130));
+    m_pWindow->init();
 }
 
+void MainWindow::on_pushButton_clicked()
+{
+    m_pWindow->show();
+}
 
+#include "ComsManagerDlg.h"
 void MainWindow::on_pushButton_2_clicked()
 {
-    m_pView->addItem(Item::ItemType::Line, QPoint(130,130));
+    ComsManagerDlg dlg;
+    dlg.init();
+    dlg.exec();
 }
 

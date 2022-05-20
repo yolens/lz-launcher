@@ -1,4 +1,4 @@
-#ifndef PLUGINMANAGER_H
+﻿#ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
 #include <QHash>
@@ -17,6 +17,7 @@ public:
     };
 public:
     static PluginManager* manager();
+    void init();
     void start();
     void stop();
 public:
@@ -24,7 +25,7 @@ public:
     virtual QString version() override;
     virtual IPlugin* pluginInstance(const QUuid &uid) override;
     virtual const IPlugin::IPluginInfo* pluginInfo(const QUuid &uid) override;
-
+    virtual QList<IPlugin*> getPluginsByType(IPlugin::Type type) override;
 
 private:
     explicit PluginManager(QObject *parent = nullptr);

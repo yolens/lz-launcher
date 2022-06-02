@@ -1,4 +1,4 @@
-#include "Item.h"
+﻿#include "Item.h"
 #include <QPainter>
 #include <QDebug>
 #include "LZLib.h"
@@ -74,7 +74,7 @@ void Item::startTest()
         {
             if (p->attribute == LPAttribute::output)
             {
-                emit testing(p->m_id);
+                emit testing(p->id);
                 break;
             }
         }
@@ -88,7 +88,7 @@ void Item::initData()
         return;
     m_pointVec.clear();
 
-    QList<LPoint*> list = Plugin::DataCenterPlugin()->getPointList(m_pChart->m_id);
+    QList<LPoint*> list = Plugin::DataCenterPlugin()->getPointList(m_pChart->id);
     foreach (LPoint* p, list)
     {
         m_pointVec.push_back(p);
@@ -327,7 +327,7 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
             if (i->rect.contains(event->pos().toPoint()))
             {
                 m_action = ActionType::ActionLine;
-                m_currentPointId = i->m_id;
+                m_currentPointId = i->id;
                 if (i->max == 0 || i->count < i->max)
                     emit action(m_action);
                 break;

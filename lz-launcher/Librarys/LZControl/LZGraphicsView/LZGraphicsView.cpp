@@ -1,4 +1,4 @@
-#include "LZGraphicsView.h"
+﻿#include "LZGraphicsView.h"
 #include <QMouseEvent>
 #include "Items/Node.h"
 #include "Items/Line.h"
@@ -101,7 +101,7 @@ void LZGraphicsView::view(const QString& title, const QList<LChart*>& list)
     foreach(LChart* p, list)
     {
         Item* item = addItem(p);
-        itemList.insert(p->m_id, item);
+        itemList.insert(p->id, item);
     }
     foreach(Item* p, itemList)
     {

@@ -39,10 +39,16 @@ public:
     virtual bool insertPoint(LPoint* p) override;
     virtual bool updatePoint(LPoint* p) override;
     virtual bool removePoint(LPoint* p) override;
+
+    virtual bool insertPoint(LOrder* p) override;
+    virtual bool updatePoint(LOrder* p) override;
+    virtual bool removePoint(LOrder* p) override;
 private:
    // QMap<int, QMap<int, LChart>> m_chartList; //图表信息
     QMap<int, LPoint*> m_pointList; //自定义点信息列表
     QMap<int, LChart*> m_chartList;
+    QMap<LOrder::Type, QMap<int, LOrder*>> m_orderList;
+
 };
 
 #endif // DATACENTERPLUGIN_H

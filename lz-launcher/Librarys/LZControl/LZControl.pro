@@ -30,6 +30,7 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    LOrderModel.cpp \
     LTreeItem.cpp \
     LTreeMode.cpp \
     LZControl.cpp \
@@ -45,6 +46,7 @@ SOURCES += \
     LZGraphicsView/LZWindow.cpp
 
 HEADERS += \
+    LOrderModel.h \
     LTreeItem.h \
     LTreeMode.h \
     LZControl_global.h \

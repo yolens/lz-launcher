@@ -1,4 +1,4 @@
-#include "Node.h"
+﻿#include "Node.h"
 #include <QPainter>
 #include "LZLib.h"
 
@@ -15,12 +15,12 @@ void Node::createPoint()
     LPoint *p = new LPoint();
     p->type = LPType::circuit;
     p->attribute = LPAttribute::input;
-    p->chartId = m_pChart->m_id;
+    p->chartId = m_pChart->id;
     insertPoint(p);
     p = new LPoint();
     p->type = LPType::circuit;
     p->attribute = LPAttribute::output;
-    p->chartId = m_pChart->m_id;
+    p->chartId = m_pChart->id;
     insertPoint(p);
 }
 
@@ -67,10 +67,10 @@ void Node::dropEvent(QGraphicsSceneDragDropEvent *event)
         QDataStream stream(&byteData, QIODevice::ReadWrite);
         qint64 node;
         stream >> (node);
-        LCom* com = (LCom*)(node);
+        LOrder* com = (LOrder*)(node);
         if (com != nullptr)
         {
-            m_name = com->name;
+            m_name = com->name();
             update();
         }
 

@@ -1,11 +1,11 @@
-#ifndef LTREEITEM_H
+﻿#ifndef LTREEITEM_H
 #define LTREEITEM_H
 #include "LDB.h"
 
 class LTreeItem
 {
 public:
-    LTreeItem(LCom *data, LTreeItem *parent = nullptr);
+    LTreeItem(LOrder *data, LTreeItem *parent = nullptr);
     ~LTreeItem();
 
     void appendChild(LTreeItem *child);
@@ -15,12 +15,12 @@ public:
     int columnCount() const;
     int row() const;
     LTreeItem *parentItem();
-    LCom* data();
+    LOrder* data();
 
 private:
     QVector<LTreeItem*> m_childs;
     LTreeItem           *m_parent;
-    LCom                *m_data;
+    LOrder              *m_data;
 };
 
 #endif // LTREEITEM_H

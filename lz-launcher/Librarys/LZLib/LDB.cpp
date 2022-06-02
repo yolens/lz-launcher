@@ -1,4 +1,4 @@
-#include "LDB.h"
+﻿#include "LDB.h"
 #include <QCoreApplication>
 #include <QtSql>
 
@@ -28,7 +28,7 @@ LPoint::LPoint()
         initialized = true;
 
         QSqlQuery query;
-        query.exec(CREATE_ORDER_SQL);
+        query.exec(CREATE_SQL_LPoint);
     }
 }
 
@@ -36,7 +36,7 @@ QList<LPoint*> LPoint::get()
 {
     QList<LPoint*> list;
     QSqlQuery query;
-    if (!query.exec(SELECT_ORDER_SQL))
+    if (!query.exec(SELECT_SQL_LPoint))
         return list;
     QSqlRecord rec = query.record();
     int id = rec.indexOf("id");
@@ -49,7 +49,7 @@ QList<LPoint*> LPoint::get()
     while (query.next())
     {
         LPoint *info = new LPoint;
-        info->m_id = query.value(id).toInt();
+        info->id = query.value(id).toInt();
         info->type = (LPType)query.value(type).toInt();
         info->name = query.value(name).toString();
         info->attribute = (LPAttribute)query.value(attribute).toInt();
@@ -68,7 +68,7 @@ bool LPoint::updateDb()
 bool LPoint::insertDb()
 {
     QSqlQuery query;
-    if (!query.prepare(INSERT_ORDER_SQL))
+    if (!query.prepare(INSERT_SQL_LPoint))
         return false;
 
     query.bindValue(":name", this->name);
@@ -78,16 +78,16 @@ bool LPoint::insertDb()
     query.bindValue(":chartId", this->chartId);
     if (!query.exec())
         return false;
-    this->m_id  = query.lastInsertId().toInt();
+    this->id  = query.lastInsertId().toInt();
     return true;
 }
 
 bool LPoint::removeDb()
 {
     QSqlQuery query;
-    if (!query.prepare(DELETE_ORDER_SQL))
+    if (!query.prepare(DELETE_SQL_LPoint))
         return false;
-    query.bindValue(":id", this->m_id);
+    query.bindValue(":id", this->id);
     if (!query.exec())
         return false;
     return true;
@@ -95,6 +95,11 @@ bool LPoint::removeDb()
 
 
 LOrder::LOrder()
+{
+
+}
+
+LOrder::~LOrder()
 {
 
 }
@@ -115,6 +120,30 @@ bool LOrder::removeDb()
     return true;
 }
 
+LDevice::LDevice()
+{
+
+}
+LDevice::~LDevice()
+{
+
+}
+bool LDevice::updateDb()
+{
+    return true;
+}
+
+bool LDevice::insertDb()
+{
+
+    return true;
+}
+
+bool LDevice::removeDb()
+{
+    return true;
+}
+
 #include <QJsonObject>
 #include <QJsonArray>
 LChart::LChart(const LCType type)
@@ -125,7 +154,7 @@ LChart::LChart(const LCType type)
     {
         initialized = true;
         QSqlQuery query;
-        query.exec(CREATE_ORDER_SQL_LChart);
+        query.exec(CREATE_SQL_LChart);
     }
 }
 
@@ -133,7 +162,7 @@ QList<LChart*> LChart::get()
 {
     QList<LChart*> list;
     QSqlQuery query;
-    if (!query.exec(SELECT_ORDER_SQL_LChart))
+    if (!query.exec(SELECT_SQL_LChart))
         return list;
     QSqlRecord rec = query.record();
     int id = rec.indexOf("id");
@@ -146,7 +175,7 @@ QList<LChart*> LChart::get()
     while (query.next())
     {
         LChart *info = new LChart;
-        info->m_id = query.value(id).toInt();
+        info->id = query.value(id).toInt();
         info->m_type = (LCType)query.value(type).toInt();
         info->m_pos = QPoint(query.value(x).toInt(), query.value(y).toInt());
         info->m_sourcePointId = query.value(sourcePointId).toInt();
@@ -159,10 +188,10 @@ QList<LChart*> LChart::get()
 bool LChart::updateDb()
 {
     QSqlQuery query;
-    if (!query.prepare(UPDATE_ORDER_SQL_LChart))
+    if (!query.prepare(UPDATE_SQL_LChart))
         return false;
     bindValue(query);
-    query.bindValue(":id",this->m_id);
+    query.bindValue(":id",this->id);
     if (!query.exec())
         return false;
     return true;
@@ -171,22 +200,22 @@ bool LChart::updateDb()
 bool LChart::insertDb()
 {
     QSqlQuery query;
-    if (!query.prepare(INSERT_ORDER_SQL_LChart))
+    if (!query.prepare(INSERT_SQL_LChart))
         return false;
 
     bindValue(query);
     if (!query.exec())
         return false;
-    this->m_id  = query.lastInsertId().toInt();
+    this->id  = query.lastInsertId().toInt();
     return true;
 }
 
 bool LChart::removeDb()
 {
     QSqlQuery query;
-    if (!query.prepare(DELETE_ORDER_SQL_LChart))
+    if (!query.prepare(DELETE_SQL_LChart))
         return false;
-    query.bindValue(":id", this->m_id);
+    query.bindValue(":id", this->id);
     if (!query.exec())
         return false;
     return true;

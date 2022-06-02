@@ -2,7 +2,7 @@
 #include <QMimeData>
 #include <QDataStream>
 
-LTreeMode::LTreeMode(QMap<int, QList<LCom*>>& data, QObject *parent)
+LTreeMode::LTreeMode(QMap<int, QList<LOrder*>>& data, QObject *parent)
     : QAbstractItemModel(parent)
 {
     m_root = new LTreeItem(nullptr);
@@ -40,7 +40,7 @@ QVariant LTreeMode::data(const QModelIndex &index, int role) const
 
     LTreeItem *item = static_cast<LTreeItem*>(index.internalPointer());
 
-    return item->data()->name;
+    return item->data()->name();
 }
 
 
@@ -60,7 +60,7 @@ QVariant LTreeMode::headerData(int section, Qt::Orientation orientation,
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
     {
         if (m_root->data() != nullptr)
-            return m_root->data()->name;
+            return m_root->data()->name();
     }
 
     return QVariant();
@@ -119,22 +119,22 @@ int LTreeMode::rowCount(const QModelIndex &parent) const
 }
 #pragma execution_character_set("utf-8")
 #include <QDebug>
-void LTreeMode::setupModelData(QMap<int, QList<LCom*>>& data, LTreeItem *parent)
+void LTreeMode::setupModelData(QMap<int, QList<LOrder*>>& data, LTreeItem *parent)
 {
     m_clearInfoList.clear();
     LTreeItem *parentItem, *childItem;
-    QMap<int, QList<LCom*>>::iterator it;
+    QMap<int, QList<LOrder*>>::iterator it;
     for (it = data.begin(); it != data.end(); it++)
     {
-        LCom* info = new LCom; //节点头信息
+        LOrder* info = new LOrder; //节点头信息
         m_clearInfoList.append(info);
-        info->name = "指令集";
+        info->setName("指令集");
 
         parentItem = new LTreeItem(info, parent);
         parent->appendChild(parentItem);
         for (int i=0; i<it.value().size(); i++)
         {
-            childItem = new LTreeItem((LCom*)it.value().at(i), parentItem);
+            childItem = new LTreeItem((LOrder*)it.value().at(i), parentItem);
             parentItem->appendChild(childItem);
         }
     }

@@ -1,4 +1,4 @@
-#include "LZWindow.h"
+﻿#include "LZWindow.h"
 #include "ui_LZWindow.h"
 #include <QDockWidget>
 #include "LZLib.h"
@@ -13,14 +13,14 @@ LZWindow::LZWindow(QWidget *parent) :
 
   //  Item *item = m_pView->addItem(LCType::LC_Node, QPoint(130,130));
 
-    QMap<int, QList<LCom*>> data;
-    QList<LCom*> list;
-    LCom *com = nullptr;
+    QMap<int, QList<LOrder*>> data;
+    QList<LOrder*> list;
+    LOrder *com = nullptr;
     for (int i=0; i<10; i++)
     {
-        com = new LCom;
+        com = new LOrder;
         com->id = i;
-        com->name = QString("指令 %1").arg(i);
+        com->setName(QString("指令 %1").arg(i));
         list.push_back(com);
     }
     data[1] = list;

@@ -36,13 +36,13 @@ bool DataCenterPlugin::initObjects()
     QList<LPoint*> pointList = LPoint::get();
     foreach (LPoint* p, pointList)
     {
-        m_pointList.insert(p->m_id, p);
+        m_pointList.insert(p->id, p);
     }
 
     QList<LChart*> chartList = LChart::get();
     foreach (LChart* p, chartList)
     {
-        m_chartList.insert(p->m_id, p);
+        m_chartList.insert(p->id, p);
     }
 
     return true;
@@ -66,7 +66,7 @@ QList<LChart*> DataCenterPlugin::getChartList(const int id)
     QList<LChart*> list;
     foreach(LChart* p, m_chartList)
     {
-        //if (id == p->m_id)
+        //if (id == p->id)
             list.push_back(p);
 
     }
@@ -95,7 +95,7 @@ bool DataCenterPlugin::insertChart(LChart* p)
         return false;
     if (p->insertDb())
     {
-        m_chartList.insert(p->m_id, p);
+        m_chartList.insert(p->id, p);
         return true;
     }
     return false;
@@ -118,7 +118,7 @@ bool DataCenterPlugin::removeChart(LChart* p)
         return false;
     if (p->removeDb())
     {
-        m_chartList.remove(p->m_id);
+        m_chartList.remove(p->id);
         return true;
     }
     return false;
@@ -130,7 +130,7 @@ bool DataCenterPlugin::insertPoint(LPoint* p)
         return false;
     if (p->insertDb())
     {
-        m_pointList.insert(p->m_id, p);
+        m_pointList.insert(p->id, p);
         return true;
     }
     return false;
@@ -152,7 +152,48 @@ bool DataCenterPlugin::removePoint(LPoint* p)
         return false;
     if (p->removeDb())
     {
-        m_pointList.remove(p->m_id);
+        m_pointList.remove(p->id);
+        return true;
+    }
+    return false;
+}
+
+bool DataCenterPlugin::insertPoint(LOrder* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->insertDb())
+    {
+        QMap<int, LOrder*> list;
+        if (m_orderList.contains(p->type()))
+            list = m_orderList.value(p->type());
+        list.insert(p->id, p);
+        if (!m_orderList.contains(p->type()))
+            m_orderList.insert(p->type(), list);
+        return true;
+    }
+    return false;
+}
+bool DataCenterPlugin::updatePoint(LOrder* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->updateDb())
+    {
+        return true;
+    }
+    return false;
+}
+bool DataCenterPlugin::removePoint(LOrder* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->removeDb())
+    {
+        QMap<int, LOrder*> list;
+        if (m_orderList.contains(p->type()))
+            list = m_orderList.value(p->type());
+        list.remove(p->id);
         return true;
     }
     return false;

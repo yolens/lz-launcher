@@ -1,5 +1,8 @@
 ﻿#include "ModbusPlugin.h"
 #include <QVariant>
+#include "Order/OrderView.h"
+#include "Device/DeviceView.h"
+#include "ModbusData.h"
 
 ModbusPlugin::ModbusPlugin(QObject *parent)
     : QObject(parent)
@@ -42,7 +45,14 @@ bool ModbusPlugin::initSettings()
 }
 bool ModbusPlugin::startPlugin()
 {
+    ModbusData::instance()->loadDb();
 
+    OrderView *o = new OrderView;
+    o->show();
+
+    DeviceView *com = new DeviceView;
+    com->show();
+    com->adjustView();
     return true;
 }
 bool ModbusPlugin::stopPlugin()

@@ -1,4 +1,5 @@
-QT += gui
+QT += gui widgets sql serialbus
+qtConfig(modbus-serialport): QT += serialport
 
 TEMPLATE = lib
 CONFIG += plugin
@@ -19,7 +20,7 @@ CONFIG(debug, debug|release) {
         QMAKE_POST_LINK += Copy $$COPY_OUT_PWD\debug\*.dll $$COPY_PWD\..\..\..\..\rundir\debug\plugins\Coms
 
         LIBS += -L$$COPY_OUT_PWD/../../../Librarys/LZLib/debug -lLZLib
-
+        LIBS += -L$$COPY_OUT_PWD/../../../Librarys/LZControl/debug -lLZControl
     }
 } else {
     win32{
@@ -27,14 +28,27 @@ CONFIG(debug, debug|release) {
         QMAKE_POST_LINK += Copy $$COPY_OUT_PWD\release\*.dll $$COPY_PWD\..\..\..\..\rundir\release\plugins\Coms
 
         LIBS += -L$$COPY_OUT_PWD/../../../Librarys/LZLib/release -lLZLib
+        LIBS += -L$$COPY_OUT_PWD/../../../Librarys/LZControl/release -lLZControl
     }
 }
 
 SOURCES += \
-    ModbusPlugin.cpp
+    Device/DeviceCom.cpp \
+    Device/DeviceView.cpp \
+    ModbusData.cpp \
+    ModbusPlugin.cpp \
+    Order/OrderCom.cpp \
+    Order/OrderModel.cpp \
+    Order/OrderView.cpp
 
 HEADERS += \
-    ModbusPlugin.h
+    Device/DeviceCom.h \
+    Device/DeviceView.h \
+    ModbusData.h \
+    ModbusPlugin.h \
+    Order/OrderCom.h \
+    Order/OrderModel.h \
+    Order/OrderView.h
 
 DISTFILES += Modbus.json
 
@@ -43,3 +57,8 @@ unix {
     target.path = $$[QT_INSTALL_PLUGINS]/generic
 }
 !isEmpty(target.path): INSTALLS += target
+
+FORMS += \
+    Device/DeviceCom.ui \
+    Device/DeviceView.ui \
+    Order/OrderView.ui

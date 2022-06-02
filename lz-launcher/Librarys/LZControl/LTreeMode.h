@@ -1,4 +1,4 @@
-#ifndef LTREEMODE_H
+﻿#ifndef LTREEMODE_H
 #define LTREEMODE_H
 
 #include <QAbstractItemModel>
@@ -7,7 +7,7 @@
 class LTreeMode : public QAbstractItemModel
 {
 public:
-    explicit LTreeMode(QMap<int, QList<LCom*>>& data, QObject *parent = nullptr);
+    explicit LTreeMode(QMap<int, QList<LOrder*>>& data, QObject *parent = nullptr);
     ~LTreeMode();
 
     QVariant data(const QModelIndex &index, int role) const override;
@@ -22,10 +22,10 @@ public:
 
     QMimeData* mimeData(const QModelIndexList &indexes) const override;
 private:
-    void setupModelData(QMap<int, QList<LCom*>>& data, LTreeItem *parent);
+    void setupModelData(QMap<int, QList<LOrder*>>& data, LTreeItem *parent);
 
     LTreeItem       *m_root;
-    QList<LCom*>    m_clearInfoList;
+    QList<LOrder*>  m_clearInfoList;
 
 };
 

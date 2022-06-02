@@ -1,4 +1,4 @@
-#include "Finish.h"
+﻿#include "Finish.h"
 #include "LZLib.h"
 Finish::Finish(QObject *parent)
     : Item{parent, LCType::LC_Finish}
@@ -11,7 +11,7 @@ void Finish::createPoint()
     LPoint *p = new LPoint();
     p->type = LPType::circuit;
     p->attribute = LPAttribute::input;
-    p->chartId = m_pChart->m_id;
+    p->chartId = m_pChart->id;
     insertPoint(p);
 }
 

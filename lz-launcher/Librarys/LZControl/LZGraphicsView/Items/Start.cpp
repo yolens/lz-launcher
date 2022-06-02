@@ -1,4 +1,4 @@
-#include "Start.h"
+﻿#include "Start.h"
 #include "LZLib.h"
 
 Start::Start(QObject *parent)
@@ -13,7 +13,7 @@ void Start::createPoint()
     LPoint *p = new LPoint();
     p->type = LPType::circuit;
     p->attribute = LPAttribute::output;
-    p->chartId = m_pChart->m_id;
+    p->chartId = m_pChart->id;
     insertPoint(p);
 }
 
@@ -44,7 +44,7 @@ void Start::startTest()
     {
         if (p->attribute == LPAttribute::output)
         {
-            emit testing(p->m_id);
+            emit testing(p->id);
             break;
         }
     }

@@ -1,6 +1,6 @@
-#include "LTreeItem.h"
+﻿#include "LTreeItem.h"
 
-LTreeItem::LTreeItem(LCom *data, LTreeItem *parent)
+LTreeItem::LTreeItem(LOrder *data, LTreeItem *parent)
     : m_parent(parent), m_data(data)
 {
 
@@ -49,7 +49,7 @@ int LTreeItem::row() const
     return 0;
 }
 
-LCom* LTreeItem::data()
+LOrder* LTreeItem::data()
 {
     return m_data;
 }

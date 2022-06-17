@@ -7,6 +7,9 @@
 #include <QMessageBox>
 #include <QStyleOption>
 #include <QPainter>
+#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
 
 DeviceCom::DeviceCom(QWidget *parent) :
     QWidget(parent),
@@ -21,10 +24,15 @@ DeviceCom::DeviceCom(QWidget *parent) :
 
         QSqlQuery query;
         query.exec(CREATE_SQL_Device_Modbus);
+        foreach (QString col, ALTER_Device_Modbus_LIST)
+        {
+            QString cmd = ALTER_SQL_Device_Modbus.arg(col);
+            query.exec(cmd);
+        }
     }
     this->setStyleSheet(".DeviceCom{background-color: rgb(255, 170, 127);}");
     ui->textEdit_mark->setFixedHeight(60);
-    this->setType(LDevice::Modbus);
+    this->setType(LOrder::Modbus);
     foreach (auto i, ParityL)
     {
         ui->comboBox_parity->addItem(i);
@@ -42,14 +50,62 @@ DeviceCom::DeviceCom(QWidget *parent) :
         ui->comboBox_stop->addItem(i);
     }
 
-    m_modbusDevice = new QModbusRtuSerialMaster(this);
-    connect(m_modbusDevice, &QModbusClient::errorOccurred, this, &DeviceCom::on_errorOccurred);
-    connect(m_modbusDevice, &QModbusClient::stateChanged,this, &DeviceCom::on_stateChanged);
+    m_worker = new DeviceWorker();
+    connect(this, &DeviceCom::create_device, m_worker, &DeviceWorker::on_create_device);
+    connect(this, &DeviceCom::connect_device, m_worker, &DeviceWorker::on_connect_device);
+    connect(this, &DeviceCom::action_data, m_worker, &DeviceWorker::on_action_data);
+    connect(m_worker, &DeviceWorker::message, this, &DeviceCom::on_message);
+    connect(m_worker, &DeviceWorker::result, this, &DeviceCom::on_result);
+    m_worker->start();
+
+
+    emit create_device();
+
+   // ui->comboBox_parity->setItemData(ui->comboBox_parity->findText("Even"), false, Qt::UserRole-1);
 }
 
 DeviceCom::~DeviceCom()
 {
+    if (nullptr != m_worker)
+    {
+        delete m_worker;
+        m_worker = nullptr;
+    }
     delete ui;
+}
+
+void DeviceCom::on_result(const int code)
+{
+    DeviceWorker::Result result = (DeviceWorker::Result)code;
+    switch (result)
+    {
+    case DeviceWorker::UnconnectedResult:
+        ui->pushButton_connect->setText("连接");
+        break;
+    case DeviceWorker::ConnectedResult:
+        ui->pushButton_connect->setText("断开");
+        emit action_data();
+        break;
+    case DeviceWorker::FinishResult:
+    {
+        DeviceWorker::DeviceInfo info;
+        info.port = this->port();
+        info.parity = ParityM.value(this->parity());
+        info.baudRate = BaudRateM.value(this->baudRate());
+        info.dataBits = DataBitsM.value(this->dataBits());
+        info.stopBits = StopBitsM.value(this->stopBits());
+        emit connect_device(info);
+    }
+        break;
+    default:
+        break;
+    }
+}
+
+void DeviceCom::on_message(const QString& msg)
+{
+    qDebug() << "recv: " << msg << QThread::currentThreadId();
+    ui->label_message->setText(msg);
 }
 
 void DeviceCom::init()
@@ -63,8 +119,11 @@ void DeviceCom::init()
     ui->textEdit_mark->setText(this->mark());
 }
 
-void DeviceCom::action(const LOrder* order)
+void DeviceCom::execute(LOrder* order)
 {
+   // emit action_data();
+   // m_orderList.push_back(order);
+    m_worker->addIn(order);
 
 }
 
@@ -89,7 +148,7 @@ bool DeviceCom::loadDb()
     {
         DeviceCom *info = new DeviceCom;
         info->id = query.value(id).toInt();
-        info->setType((Type)query.value(type).toInt());
+        info->setType((LOrder::Type)query.value(type).toInt());
         info->setName(query.value(name).toString());
         info->setMark(query.value(mark).toString());
         info->setPort(query.value(port).toString());
@@ -201,118 +260,11 @@ void DeviceCom::paintEvent(QPaintEvent * event)
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
 }
 
-bool DeviceCom::connectDevice()
-{
-
-    if (m_modbusDevice->state() != QModbusDevice::ConnectedState)
-    {
-        m_modbusDevice->setConnectionParameter(QModbusDevice::SerialPortNameParameter,
-            ui->lineEdit_port->text());
-    #if QT_CONFIG(modbus_serialport)
-        m_modbusDevice->setConnectionParameter(QModbusDevice::SerialParityParameter,
-            ParityM.value(ui->comboBox_parity->currentText()));
-        m_modbusDevice->setConnectionParameter(QModbusDevice::SerialBaudRateParameter,
-            BaudRateM.value(ui->comboBox_baud->currentText()));
-        m_modbusDevice->setConnectionParameter(QModbusDevice::SerialDataBitsParameter,
-            DataBitsM.value(ui->comboBox_data->currentText()));
-        m_modbusDevice->setConnectionParameter(QModbusDevice::SerialStopBitsParameter,
-            StopBitsM.value(ui->comboBox_stop->currentText()));
-    #endif
-
-        if (!m_modbusDevice->connectDevice())
-        {
-        //    QMessageBox::information(nullptr, "fail", "fail");
-        }
-    }
-    else
-    {
-        m_modbusDevice->disconnectDevice();
-    }
-    return true;
-}
-
-void DeviceCom::on_errorOccurred(QModbusDevice::Error error)
-{
-    ui->label_message->setText(QString("%1,%2").arg(m_modbusDevice->errorString()).arg(error));
-}
-
-void DeviceCom::on_stateChanged(QModbusDevice::State state)
-{
-    switch (state)
-    {
-    case QModbusDevice::UnconnectedState:
-        ui->label_message->setText("disconnect");
-        ui->pushButton_connect->setText("connect");
-        break;
-    case QModbusDevice::ConnectingState:
-        ui->label_message->setText("connecting");
-        break;
-    case QModbusDevice::ConnectedState:
-        ui->label_message->setText("connected");
-        ui->pushButton_connect->setText("disconnect");
-        break;
-    case QModbusDevice::ClosingState:
-        ui->label_message->setText("closing");
-        break;
-    default:
-        break;
-    }
-
-}
 
 void DeviceCom::on_pushButton_connect_clicked()
 {
-    connectDevice();
-}
+    m_worker->actionDataStop();
 
-void DeviceCom::write(const LOrder* order)
-{
-    if (nullptr == m_modbusDevice)
-        return;
-    char kk[10];
-    kk[0] = 1;
-    kk[1] = 0;
-    kk[2] = 1;
-    QModbusDataUnit writeUnit = writeRequest(order);
-    QModbusDataUnit::RegisterType table = writeUnit.registerType();
-    for (int i = 0, total = int(writeUnit.valueCount()); i < total; ++i) {
-        if (table == QModbusDataUnit::Coils)
-            writeUnit.setValue(i, kk[i]);
-        else
-            writeUnit.setValue(i, kk[i]);
-    }
-
-    if (auto *reply = m_modbusDevice->sendWriteRequest(writeUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, [this, reply]() {
-                if (reply->error() == QModbusDevice::ProtocolError) {
-                    ui->label_message->setText(tr("Write response error: %1 (Mobus exception: 0x%2)")
-                                               .arg(reply->errorString()).arg(reply->rawResult().exceptionCode(), -1, 16));
-                } else if (reply->error() != QModbusDevice::NoError) {
-                    ui->label_message->setText(tr("Write response error: %1 (code: 0x%2)").
-                                               arg(reply->errorString()).arg(reply->error(), -1, 16));
-                }
-                reply->deleteLater();
-            });
-        } else {
-            // broadcast replies return immediately
-            reply->deleteLater();
-        }
-    } else {
-        ui->label_message->setText(tr("Write error: ") + m_modbusDevice->errorString());
-    }
-}
-QModbusDataUnit DeviceCom::writeRequest(const LOrder* order) const
-{
-    const auto table =
-        static_cast<QModbusDataUnit::RegisterType>(QModbusDataUnit::Coils);
-
-    int startAddress = 0;
-    Q_ASSERT(startAddress >= 0 && startAddress < 10);
-
-    // do not go beyond 10 entries
-    quint16 numberOfEntries = qMin((quint16)3, quint16(10 - startAddress));
-    return QModbusDataUnit(table, startAddress, numberOfEntries);
 }
 
 
@@ -326,14 +278,16 @@ void DeviceCom::on_pushButton_save_clicked()
     this->setStopBits(ui->comboBox_stop->currentText());
     this->setMark(ui->textEdit_mark->document()->toPlainText());
     ModbusData::instance()->update(this);
+    emit changeDeviceName();
 }
 
 
 void DeviceCom::on_pushButton_delete_clicked()
 {
-    write(nullptr);
-    return;
-    ModbusData::instance()->remove(this);
-    emit updateView();
+    if (ModbusData::instance()->remove(this))
+    {
+        emit updateView();
+        delete this;
+    }
 }
 

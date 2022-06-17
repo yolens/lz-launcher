@@ -1,4 +1,4 @@
-#ifndef ITEM_H
+﻿#ifndef ITEM_H
 #define ITEM_H
 #include <QObject>
 #include <QGraphicsItem>
@@ -20,7 +20,7 @@ class Item : public QObject, public QGraphicsItem
 public:
     enum ActionType {
         ActionNormal,
-        ActionLine          //连线
+        ActionLine,          //连线
     };
 
     enum MouseState {
@@ -72,11 +72,12 @@ protected:
     virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
     virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-
+    virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 private slots:
     void onRemoveLine();
     void onTestingTimer();
 signals:
+    void finished();
     void action(const Item::ActionType type);
     void remove();
     void adjust();
@@ -92,6 +93,7 @@ private:
     QVector<LPoint*> m_pointVec;
     QRectF m_rect;
 
+    LOrder *m_pOrder = nullptr;
     LChart *m_pChart = nullptr;
     QVector<Item*> m_lineList;
     TestState m_testState = TestState::Normal;

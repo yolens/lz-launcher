@@ -1,10 +1,11 @@
-#ifndef LZGRAPHICSVIEW_H
+﻿#ifndef LZGRAPHICSVIEW_H
 #define LZGRAPHICSVIEW_H
 
 #include <QGraphicsView>
 #include "LZControl_global.h"
 #include "LZGraphicsScene.h"
 #include "Items/Item.h"
+#include "DetectWorker.h"
 
 class QUndoStack;
 class QUndoView;
@@ -35,12 +36,13 @@ private slots:
     void onTesting(const int outPointId);
     void onTestFinish();
 signals:
-
+    void detect_start();
 private:
     LZGraphicsScene *m_pScene = nullptr;
     Item *m_pSource = nullptr;
     Item *m_pVirtual = nullptr;
     Item *m_pLine = nullptr;
+    DetectWorker *m_worker = nullptr;
 
     QUndoStack *m_undoStack = nullptr;
     QUndoView *m_undoView = nullptr;

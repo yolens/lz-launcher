@@ -85,9 +85,9 @@ bool ModbusData::remove(LDevice *p)
     return false;
 }
 
-QList<LOrder*>* ModbusData::orderList()
+QList<LOrder*>& ModbusData::orderList()
 {
-    return &m_orderList;
+    return m_orderList;
 }
 
 void ModbusData::setOrderList(QList<LOrder*>& list)

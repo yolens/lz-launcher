@@ -44,6 +44,7 @@ signals:
 private:
     QHash<QString, PluginItem> m_pluginMap;
     QList<PluginItem> m_releaseItems;
+    QMultiMap<int, IPlugin*> m_pluginOrder;
 };
 
 #endif // PLUGINMANAGER_H

@@ -30,6 +30,10 @@ void LZGraphicsView::init()
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
 
+    m_worker = new DetectWorker();
+    connect(this, &LZGraphicsView::detect_start, m_worker, &DetectWorker::on_detect_start);
+    m_worker->start();
+
     createUndoView();
 }
 
@@ -50,7 +54,14 @@ QWidget* LZGraphicsView::getUndoView()
 
 void LZGraphicsView::startTest()
 {
-    Item *start = nullptr;
+    QList<Item*> list;
+    foreach (QGraphicsItem *gi, m_pScene->items())
+    {
+        list.append(qgraphicsitem_cast<Item*>(gi));
+    }
+    m_worker->setList(list);
+    emit detect_start();
+    /*Item *start = nullptr;
     QList<QGraphicsItem *> list = m_pScene->items();
     foreach (QGraphicsItem *gi, list)
     {
@@ -62,7 +73,7 @@ void LZGraphicsView::startTest()
         }
     }
     if (start)
-        start->startTest();
+        start->startTest();*/
 }
 
 void LZGraphicsView::onTestFinish()
@@ -76,7 +87,7 @@ void LZGraphicsView::onTesting(const int outPointId)
    // if (nullptr == item)
    //     return;
 
-    QList<QGraphicsItem *> list = m_pScene->items();
+    /*QList<QGraphicsItem *> list = m_pScene->items();
     foreach (QGraphicsItem *gi, list)
     {
         Item *item = qgraphicsitem_cast<Item*>(gi);
@@ -90,7 +101,7 @@ void LZGraphicsView::onTesting(const int outPointId)
                 break;
             }
         }
-    }
+    }*/
 }
 
 #include <QDebug>
@@ -168,6 +179,7 @@ Item* LZGraphicsView::addItem(const LCType type)
         connect(item, &Item::remove, this, &LZGraphicsView::onRemove);
         connect(item, &Item::testing, this, &LZGraphicsView::onTesting);
         connect(item, &Item::testFinish, this, &LZGraphicsView::onTestFinish);
+        connect(item, &Item::testing, m_worker, &DetectWorker::on_testing);
     }
     return item;
 }

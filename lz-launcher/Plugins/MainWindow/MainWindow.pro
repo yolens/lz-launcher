@@ -12,6 +12,7 @@ CONFIG += c++11
 INCLUDEPATH += ../../LZDetector/Interface
 INCLUDEPATH += ../../Librarys/LZControl
 INCLUDEPATH += ../../Librarys/LZLib
+INCLUDEPATH += ./Form
 COPY_PWD = $$replace(PWD, /, \\)
 COPY_OUT_PWD = $$replace(OUT_PWD, /, \\)
 CONFIG(debug, debug|release) {
@@ -34,12 +35,14 @@ CONFIG(debug, debug|release) {
 
 
 SOURCES += \
-    ComsManagerDlg.cpp \
+    Form/ComsMgrForm.cpp \
+    Form/MainForm.cpp \
     MainWindow.cpp \
     MainWindowPlugin.cpp
 
 HEADERS += \
-    ComsManagerDlg.h \
+    Form/ComsMgrForm.h \
+    Form/MainForm.h \
     MainWindow.h \
     MainWindowPlugin.h
 
@@ -52,5 +55,6 @@ unix {
 !isEmpty(target.path): INSTALLS += target
 
 FORMS += \
-    ComsManagerDlg.ui \
+    Form/ComsMgrForm.ui \
+    Form/MainForm.ui \
     MainWindow.ui

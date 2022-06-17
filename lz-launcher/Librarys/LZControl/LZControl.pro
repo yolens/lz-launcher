@@ -30,11 +30,13 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    Delegate/ComboBoxDelegate.cpp \
     LOrderModel.cpp \
     LTreeItem.cpp \
     LTreeMode.cpp \
     LZControl.cpp \
     LZGraphicsView/Commands.cpp \
+    LZGraphicsView/DetectWorker.cpp \
     LZGraphicsView/Items/Finish.cpp \
     LZGraphicsView/Items/Item.cpp \
     LZGraphicsView/Items/Line.cpp \
@@ -46,12 +48,14 @@ SOURCES += \
     LZGraphicsView/LZWindow.cpp
 
 HEADERS += \
+    Delegate/ComboBoxDelegate.h \
     LOrderModel.h \
     LTreeItem.h \
     LTreeMode.h \
     LZControl_global.h \
     LZControl.h \
     LZGraphicsView/Commands.h \
+    LZGraphicsView/DetectWorker.h \
     LZGraphicsView/Items/Finish.h \
     LZGraphicsView/Items/Item.h \
     LZGraphicsView/Items/Line.h \

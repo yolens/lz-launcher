@@ -11,7 +11,13 @@ OrderCom::OrderCom()
 
         QSqlQuery query;
         query.exec(CREATE_SQL_Order_Modbus);
+        foreach (QString col, ALTER_Order_Modbus_LIST)
+        {
+            QString cmd = ALTER_SQL_Order_Modbus.arg(col);
+            query.exec(cmd);
+        }
     }
+    this->setType(LOrder::Modbus);
 }
 
 bool OrderCom::loadDb()
@@ -27,6 +33,8 @@ bool OrderCom::loadDb()
     int mark = rec.indexOf("mark");
     int value = rec.indexOf("value");
     int deviceId = rec.indexOf("deviceId");
+    int rwType = rec.indexOf("rwType");
+    int byteType = rec.indexOf("byteType");
     int registerType = rec.indexOf("registerType");
     int serverAddress = rec.indexOf("serverAddress");
     int startAddress = rec.indexOf("startAddress");
@@ -41,7 +49,9 @@ bool OrderCom::loadDb()
         info->setMark(query.value(mark).toString());
         info->setValue(query.value(value));
         info->setDeviceId(query.value(deviceId).toInt());
-        info->setRegisterType(query.value(registerType).toString());
+        info->setRWType((RWType)query.value(rwType).toInt());
+        info->setByteType((ByteType)query.value(byteType).toInt());
+        info->setRegisterType(query.value(registerType).toInt());
         info->setServerAddress(query.value(serverAddress).toInt());
         info->setStartAddress(query.value(startAddress).toInt());
         info->setNumberOfValues(query.value(numberOfValues).toInt());
@@ -93,6 +103,8 @@ bool OrderCom::bindValue(QSqlQuery& query)
     query.bindValue(":mark", this->mark());
     query.bindValue(":value", this->value());
     query.bindValue(":deviceId", this->deviceId());
+    query.bindValue(":rwType", this->rwType());
+    query.bindValue(":byteType", this->byteType());
     query.bindValue(":registerType", this->registerType());
     query.bindValue(":serverAddress", this->serverAddress());
     query.bindValue(":startAddress", this->startAddress());
@@ -100,7 +112,7 @@ bool OrderCom::bindValue(QSqlQuery& query)
     return true;
 }
 
-QString OrderCom::registerType()
+int OrderCom::registerType()
 {
     return m_registerType;
 }
@@ -117,7 +129,7 @@ int OrderCom::numberOfValues()
     return m_numberOfValues;
 }
 
-void OrderCom::setRegisterType(const QString& value)
+void OrderCom::setRegisterType(const int value)
 {
     m_registerType = value;
 }

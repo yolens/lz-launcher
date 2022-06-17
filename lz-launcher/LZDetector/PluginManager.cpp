@@ -66,7 +66,6 @@ bool PluginManager::loadPlugins()
 bool PluginManager::initPlugins()
 {
     m_releaseItems.clear();
-    QMultiMap<int, IPlugin*> pluginOrder;
     QHash<QString, PluginItem>::iterator it = m_pluginMap.begin();
     for(; it != m_pluginMap.end();)
     {
@@ -74,7 +73,7 @@ bool PluginManager::initPlugins()
         IPlugin* plugin = it.value().plugin;
         if(plugin->initConnections(this, initOrder))
         {
-            pluginOrder.insertMulti(initOrder, plugin);
+            m_pluginOrder.insertMulti(initOrder, plugin);
             ++it;
         }
         else
@@ -85,12 +84,12 @@ bool PluginManager::initPlugins()
         }
     }//end while
 
-    foreach(IPlugin* plugin, pluginOrder)
+    foreach(IPlugin* plugin, m_pluginOrder)
     {
         qDebug() << "init plugin: " << plugin->pluginUuid().toString() << m_pluginMap.value(plugin->pluginUuid().toString()).info->name << plugin->pluginType();
         plugin->initObjects();
     }
-    foreach(IPlugin* plugin, pluginOrder)
+    foreach(IPlugin* plugin, m_pluginOrder)
         plugin->initSettings();
 
     return true;
@@ -99,9 +98,10 @@ bool PluginManager::initPlugins()
 bool PluginManager::startPlugins()
 {
     bool allStarted = true;
-    foreach(const PluginItem &pluginItem, m_pluginMap)
+    foreach(IPlugin* plugin, m_pluginOrder)
     {
-        bool started = pluginItem.plugin->startPlugin();
+        qDebug() << "start plugin: " << plugin->pluginUuid().toString() << m_pluginMap.value(plugin->pluginUuid().toString()).info->name << plugin->pluginType();
+        bool started = plugin->startPlugin();
         allStarted = allStarted && started;
     }
 

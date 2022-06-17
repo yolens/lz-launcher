@@ -4,6 +4,7 @@
 #include <QString>
 #include <QRect>
 #include <QVector>
+#include <QVariant>
 
 class LZLIB_EXPORT LDB
 {
@@ -36,6 +37,7 @@ class LZLIB_EXPORT LPoint : public LDB
 {
 public:
     LPoint();
+    virtual ~LPoint();
 
     static QList<LPoint*> get();
 
@@ -62,6 +64,17 @@ const auto CREATE_SQL_LPoint = QLatin1String(R"(
         , max integer
         , chartId integer
     ))").arg(Table_LPoint);
+
+const QVector<QString> ALTER_LPoint_LIST = {
+    {"name varchar"},
+    {"type integer"},
+    {"attribute integer"},
+    {"max integer"},
+    {"chartId integer"},
+};
+const auto ALTER_SQL_LPoint = QLatin1String(R"(
+    alter table %1 add %2
+    )").arg(Table_LPoint).arg("%1");
 
 const auto INSERT_SQL_LPoint = QLatin1String(R"(
     insert into %1(name, type, attribute, max, chartId)
@@ -91,7 +104,10 @@ const QString Table_LChart = "LChart";
 class LZLIB_EXPORT LChart : public LDB
 {
 public:
+
+public:
     LChart(const LCType type = LCType::LC_Node);
+    virtual ~LChart();
 
     static QList<LChart*> get();
 
@@ -104,6 +120,11 @@ public:
     QPoint          m_pos = QPoint(0,0);          //位置信息
     int             m_sourcePointId = 0;
     int             m_destPointId = 0;
+    int             m_orderId = 0;
+    int             m_orderType = 0;
+
+    int             m_delay; //ms
+    QVariant        m_value;
 };
 const auto CREATE_SQL_LChart = QLatin1String(R"(
     create table IF NOT EXISTS %1(
@@ -113,18 +134,63 @@ const auto CREATE_SQL_LChart = QLatin1String(R"(
         , y integer
         , sourcePointId integer
         , destPointId integer
+        , orderId integer
+        , orderType integer
+        , delay integer
+        , value varchar
     ))").arg(Table_LChart);
 
+const QVector<QString> ALTER_LChart_LIST = {
+    {"type integer"},
+    {"x integer"},
+    {"y integer"},
+    {"sourcePointId integer"},
+    {"destPointId integer"},
+    {"orderId integer"},
+    {"orderType integer"},
+    {"delay integer"},
+    {"value varchar"},
+};
+const auto ALTER_SQL_LChart = QLatin1String(R"(
+    alter table %1 add %2
+    )").arg(Table_LChart).arg("%1");
+
+
 const auto INSERT_SQL_LChart = QLatin1String(R"(
-    insert into %1(type, x, y, sourcePointId, destPointId)
-            values(:type, :x, :y, :sourcePointId, :destPointId)
+    insert into %1(
+                      type
+                    , x
+                    , y
+                    , sourcePointId
+                    , destPointId
+                    , orderId
+                    , orderType
+                    , delay
+                    , value
+                   )
+            values(
+                      :type
+                    , :x
+                    , :y
+                    , :sourcePointId
+                    , :destPointId
+                    , :orderId
+                    , :orderType
+                    , :delay
+                    , :value
+                   )
     )").arg(Table_LChart);
 const auto UPDATE_SQL_LChart = QLatin1String(R"(
-    update %1 set type=:type
-                , x=:x
-                , y=:y
-                , sourcePointId=:sourcePointId
-                , destPointId=:destPointId
+    update %1 set
+                      type=:type
+                    , x=:x
+                    , y=:y
+                    , sourcePointId=:sourcePointId
+                    , destPointId=:destPointId
+                    , orderId=:orderId
+                    , orderType=:orderType
+                    , delay=:delay
+                    , value=:value
     where id=:id
     )").arg(Table_LChart);
 const auto DELETE_SQL_LChart = QLatin1String(R"(
@@ -143,6 +209,17 @@ public:
     enum Type {
         Modbus = 0,
     };
+    enum RWType {
+        Write = 0,
+        Read,
+    };
+    enum ByteType {
+        HEX = 0,
+        DEC,
+        Binary,
+        Float,
+    };
+
 public:
     LOrder();
     virtual ~LOrder();
@@ -156,37 +233,45 @@ public:
     void setMark(const QString& value) {m_mark = value;};
     void setValue(const QVariant& value) {m_value = value;};
     void setDeviceId(const int value){m_deviceId = value;};
+    void setRWType(const RWType value){m_rwType = value;};
+    void setByteType(const ByteType value){m_byteType = value;};
     Type type() {return m_type;};
     QString& name() {return m_name;};
     QString& mark() {return m_mark;};
     QVariant& value() {return m_value;};
-    int deviceId(){return 0;};
+    int deviceId(){return m_deviceId;};
+    RWType rwType() {return m_rwType;};
+    ByteType byteType() {return m_byteType;};
 
-    virtual QString registerType(){return "";};
+    virtual int registerType(){return 0;};
     virtual int serverAddress(){return 0;};
     virtual int startAddress(){return 0;};
     virtual int numberOfValues(){return 0;};
-    virtual void setRegisterType(const QString& value){};
-    virtual void setServerAddress(const int value){};
-    virtual void setStartAddress(const int value){};
-    virtual void setNumberOfValues(const int value){};
+    virtual void setRegisterType(const int value){Q_UNUSED(value);};
+    virtual void setServerAddress(const int value){Q_UNUSED(value);};
+    virtual void setStartAddress(const int value){Q_UNUSED(value);};
+    virtual void setNumberOfValues(const int value){Q_UNUSED(value);};
 
     virtual void execute(){};
     virtual void write(){};
+
+    void setValueCallback(std::function<void(const QVariant value)> cb) {m_valueCallback = cb;};
+    std::function<void(const QVariant value)> valueCallback() {return m_valueCallback;};
 private:
     Type            m_type;
     QString         m_name;
     QString         m_mark;
     QVariant        m_value;
     int             m_deviceId; //设备id
+    RWType          m_rwType = RWType::Write;
+    ByteType        m_byteType = ByteType::HEX;
+
+    std::function<void(const QVariant value)> m_valueCallback = nullptr;
+
 };
 
 class LZLIB_EXPORT LDevice : public LDB
 {
-public:
-    enum Type {
-        Modbus = 0,
-    };
 public:
     LDevice();
     virtual ~LDevice();
@@ -196,11 +281,11 @@ public:
     virtual bool removeDb() override;
 
 
-    Type type(){return m_type;};
+    LOrder::Type type(){return m_type;};
     QString name(){return m_name;};
     QString mark(){return m_mark;};
 
-    void setType(const Type value){m_type = value;};
+    void setType(const LOrder::Type value){m_type = value;};
     void setName(const QString& value){m_name = value;};
     void setMark(const QString& value){m_mark = value;};
     virtual QString port(){return QString();};
@@ -213,8 +298,10 @@ public:
     virtual void setBaudRate(const QString& value){};
     virtual void setDataBits(const QString& value){};
     virtual void setStopBits(const QString& value){};
+
+    virtual void execute(LOrder* order) = 0;
 private:
-    Type            m_type;
+    LOrder::Type    m_type;
     QString         m_name;
     QString         m_mark;
 

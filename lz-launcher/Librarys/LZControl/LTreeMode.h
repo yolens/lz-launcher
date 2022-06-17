@@ -7,7 +7,7 @@
 class LTreeMode : public QAbstractItemModel
 {
 public:
-    explicit LTreeMode(QMap<int, QList<LOrder*>>& data, QObject *parent = nullptr);
+    explicit LTreeMode(QMap<LOrder::Type, QList<LOrder*>>& data, QObject *parent = nullptr);
     ~LTreeMode();
 
     QVariant data(const QModelIndex &index, int role) const override;
@@ -22,7 +22,7 @@ public:
 
     QMimeData* mimeData(const QModelIndexList &indexes) const override;
 private:
-    void setupModelData(QMap<int, QList<LOrder*>>& data, LTreeItem *parent);
+    void setupModelData(QMap<LOrder::Type, QList<LOrder*>>& data, LTreeItem *parent);
 
     LTreeItem       *m_root;
     QList<LOrder*>  m_clearInfoList;

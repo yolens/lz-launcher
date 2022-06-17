@@ -1,6 +1,7 @@
 ﻿#ifndef MODBUSDATA_H
 #define MODBUSDATA_H
 #include "LZLib.h"
+#include "Order/OrderCom.h"
 
 class ModbusData
 {
@@ -18,7 +19,7 @@ public:
     bool insert(LDevice *p);
     bool update(LDevice *p);
     bool remove(LDevice *p);
-    QList<LOrder*>* orderList();
+    QList<LOrder*>& orderList();
     void setOrderList(QList<LOrder*>& list);
     QList<LDevice*>* deviceList();
     void setDeviceList(QList<LDevice*>& list);

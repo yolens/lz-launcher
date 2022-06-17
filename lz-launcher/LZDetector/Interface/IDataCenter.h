@@ -19,9 +19,12 @@ public:
     virtual bool updatePoint(LPoint* p) = 0;
     virtual bool removePoint(LPoint* p) = 0;
 
-    virtual bool insertPoint(LOrder* p) = 0;
-    virtual bool updatePoint(LOrder* p) = 0;
-    virtual bool removePoint(LOrder* p) = 0;
+
+
+    virtual void execute(LOrder* p) = 0; //执行
+    virtual QMap<LOrder::Type, QList<LOrder*>>& getOrderList() = 0;
+    virtual LOrder* newOrder(LOrder* p) = 0;
+    virtual LOrder* getOrder(const int id, const int type) = 0;
 };
 Q_DECLARE_INTERFACE(IDataCenter,"LZ.IDataCenter/1.0")
 

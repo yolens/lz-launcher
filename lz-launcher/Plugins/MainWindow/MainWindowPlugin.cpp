@@ -28,7 +28,7 @@ void MainWindowPlugin::pluginInfo(IPluginInfo *pluginInfo)
 bool MainWindowPlugin::initConnections(IPluginManager *pluginManager, int& initOrder)
 {
     Q_UNUSED(pluginManager);
-    initOrder = Type::Main+1;
+    initOrder = Type::Main+2;
     return true;
 }
 bool MainWindowPlugin::initObjects()

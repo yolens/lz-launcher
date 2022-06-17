@@ -18,10 +18,13 @@ public:
     ~MainWindow();
 
     void init();
+private:
+    void switchPage(QWidget *w);
 private slots:
-    void on_pushButton_clicked();
+    void on_action(const int type);
 
-    void on_pushButton_2_clicked();
+
+    void on_pushButton_back_clicked();
 
 private:
     Ui::MainWindow *ui;

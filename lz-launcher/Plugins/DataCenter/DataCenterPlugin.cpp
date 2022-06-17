@@ -1,4 +1,6 @@
 ﻿#include "DataCenterPlugin.h"
+#include "LZLib.h"
+#include "IOrder.h"
 
 DataCenterPlugin::DataCenterPlugin(QObject *parent)
     : QObject(parent)
@@ -33,6 +35,16 @@ bool DataCenterPlugin::initConnections(IPluginManager *pluginManager, int& initO
 #include <QDebug>
 bool DataCenterPlugin::initObjects()
 {
+
+
+    return true;
+}
+bool DataCenterPlugin::initSettings()
+{
+    return true;
+}
+bool DataCenterPlugin::startPlugin()
+{
     QList<LPoint*> pointList = LPoint::get();
     foreach (LPoint* p, pointList)
     {
@@ -44,20 +56,27 @@ bool DataCenterPlugin::initObjects()
     {
         m_chartList.insert(p->id, p);
     }
-
-    return true;
-}
-bool DataCenterPlugin::initSettings()
-{
-    return true;
-}
-bool DataCenterPlugin::startPlugin()
-{
-
+    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
+    foreach (IPlugin *plugin, list)
+    {
+        IOrder* order = qobject_cast<IOrder*>(plugin->instance());
+        if (nullptr != order)
+        {
+            m_orderMap[order->type()] = order->orderList();
+        }
+    }
     return true;
 }
 bool DataCenterPlugin::stopPlugin()
 {
+    foreach(LPoint* p, m_pointList.values())
+    {
+        delete p;
+    }
+    foreach(LChart* p, m_chartList.values())
+    {
+        delete p;
+    }
     return true;
 }
 
@@ -158,43 +177,70 @@ bool DataCenterPlugin::removePoint(LPoint* p)
     return false;
 }
 
-bool DataCenterPlugin::insertPoint(LOrder* p)
+QMap<LOrder::Type, QList<LOrder*>>& DataCenterPlugin::getOrderList()
 {
-    if (nullptr == p)
-        return false;
-    if (p->insertDb())
-    {
-        QMap<int, LOrder*> list;
-        if (m_orderList.contains(p->type()))
-            list = m_orderList.value(p->type());
-        list.insert(p->id, p);
-        if (!m_orderList.contains(p->type()))
-            m_orderList.insert(p->type(), list);
-        return true;
-    }
-    return false;
+    qDebug() << "qqqqq= " << m_orderMap.size() << m_orderMap[LOrder::Modbus].size();
+    return m_orderMap;
 }
-bool DataCenterPlugin::updatePoint(LOrder* p)
+
+void DataCenterPlugin::execute(LOrder* p)
 {
     if (nullptr == p)
-        return false;
-    if (p->updateDb())
+        return;
+    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
+    foreach (IPlugin *plugin, list)
     {
-        return true;
+        IOrder* orderPlugin = qobject_cast<IOrder*>(plugin->instance());
+        if (nullptr != orderPlugin)
+        {
+            if (p->type() == orderPlugin->type())
+            {
+                orderPlugin->execute(p);
+                break;
+            }
+
+        }
     }
-    return false;
+
 }
-bool DataCenterPlugin::removePoint(LOrder* p)
+
+LOrder* DataCenterPlugin::newOrder(LOrder* p)
 {
     if (nullptr == p)
-        return false;
-    if (p->removeDb())
+        return nullptr;
+    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
+    foreach (IPlugin *plugin, list)
     {
-        QMap<int, LOrder*> list;
-        if (m_orderList.contains(p->type()))
-            list = m_orderList.value(p->type());
-        list.remove(p->id);
-        return true;
+        IOrder* orderPlugin = qobject_cast<IOrder*>(plugin->instance());
+        if (nullptr != orderPlugin)
+        {
+            if (p->type() == orderPlugin->type())
+            {
+                return orderPlugin->newOrder(p);
+            }
+        }
     }
-    return false;
+    return nullptr;
+}
+
+LOrder* DataCenterPlugin::getOrder(const int id, const int type)
+{
+    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
+    foreach (IPlugin *plugin, list)
+    {
+        IOrder* orderPlugin = qobject_cast<IOrder*>(plugin->instance());
+        if (nullptr != orderPlugin)
+        {
+            if (static_cast<LOrder::Type>(type) == orderPlugin->type())
+            {
+                QList<LOrder*> orderList = orderPlugin->orderList();
+                foreach (LOrder* item, orderList)
+                {
+                    if (id == item->id)
+                        return item;
+                }
+            }
+        }
+    }
+    return nullptr;
 }

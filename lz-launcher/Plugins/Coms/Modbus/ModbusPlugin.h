@@ -26,10 +26,15 @@ public:
     virtual bool stopPlugin() override;
 
     //IOrder
-    virtual void execute() override;
+    virtual void execute(LOrder *order) override;
     virtual void write(QVariant value) override;
     virtual QVariant read() override;
     virtual QWidget* getWidget() override;
+    virtual void showWindow(const bool show) override;
+    virtual QString displayName() override;
+    virtual LOrder::Type type() override;
+    virtual QList<LOrder*>& orderList() override;
+    virtual LOrder* newOrder(LOrder* p) override;
 };
 
 #endif // MODBUSPLUGIN_H

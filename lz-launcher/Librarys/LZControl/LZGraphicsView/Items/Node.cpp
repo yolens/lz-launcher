@@ -28,7 +28,12 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 {
     Item::paint(painter, option, widget);
     painter->setPen(QPen(Qt::black));
-    painter->drawText(this->boundingRect(), Qt::AlignCenter, m_name);
+    if (nullptr != m_pOrder)
+    {
+        QRectF textRect = this->boundingRect();
+        textRect.adjust(20.0, 0.0, -20.0, 0.0);
+        painter->drawText(textRect, Qt::AlignCenter | Qt::TextWordWrap, m_pOrder->name());
+    }
     painter->drawText(this->boundingRect().x()+5, this->boundingRect().bottom()-5, QString::number(m_testingTimes));
 }
 
@@ -70,7 +75,10 @@ void Node::dropEvent(QGraphicsSceneDragDropEvent *event)
         LOrder* com = (LOrder*)(node);
         if (com != nullptr)
         {
-            m_name = com->name();
+            m_pOrder = com;
+            m_pChart->m_orderId = com->id;
+            m_pChart->m_orderType = com->type();
+            updateChart();
             update();
         }
 

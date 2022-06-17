@@ -29,7 +29,17 @@ LPoint::LPoint()
 
         QSqlQuery query;
         query.exec(CREATE_SQL_LPoint);
+        foreach (QString col, ALTER_LPoint_LIST)
+        {
+            QString cmd = ALTER_SQL_LPoint.arg(col);
+            query.exec(cmd);
+        }
     }
+}
+
+LPoint::~LPoint()
+{
+
 }
 
 QList<LPoint*> LPoint::get()
@@ -155,7 +165,18 @@ LChart::LChart(const LCType type)
         initialized = true;
         QSqlQuery query;
         query.exec(CREATE_SQL_LChart);
+        foreach (QString col, ALTER_LChart_LIST)
+        {
+            QString cmd = ALTER_SQL_LChart.arg(col);
+            query.exec(cmd);
+        }
+
     }
+}
+
+LChart::~LChart()
+{
+
 }
 
 QList<LChart*> LChart::get()
@@ -171,6 +192,10 @@ QList<LChart*> LChart::get()
     int y = rec.indexOf("y");
     int sourcePointId = rec.indexOf("sourcePointId");
     int destPointId = rec.indexOf("destPointId");
+    int orderId = rec.indexOf("orderId");
+    int orderType = rec.indexOf("orderType");
+    int delay = rec.indexOf("delay");
+    int value = rec.indexOf("value");
 
     while (query.next())
     {
@@ -180,6 +205,10 @@ QList<LChart*> LChart::get()
         info->m_pos = QPoint(query.value(x).toInt(), query.value(y).toInt());
         info->m_sourcePointId = query.value(sourcePointId).toInt();
         info->m_destPointId = query.value(destPointId).toInt();
+        info->m_orderId = query.value(orderId).toInt();
+        info->m_orderType = query.value(orderType).toInt();
+        info->m_delay = query.value(delay).toInt();
+        info->m_value = query.value(value);
         list.push_back(info);
     }
     return list;
@@ -228,5 +257,9 @@ bool LChart::bindValue(QSqlQuery& query)
     query.bindValue(":y", m_pos.y());
     query.bindValue(":sourcePointId", this->m_sourcePointId);
     query.bindValue(":destPointId", this->m_destPointId);
+    query.bindValue(":orderId", this->m_orderId);
+    query.bindValue(":orderType", this->m_orderType);
+    query.bindValue(":delay", this->m_delay);
+    query.bindValue(":value", this->m_value);
     return true;
 }

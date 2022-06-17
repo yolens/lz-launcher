@@ -13,7 +13,7 @@ LZWindow::LZWindow(QWidget *parent) :
 
   //  Item *item = m_pView->addItem(LCType::LC_Node, QPoint(130,130));
 
-    QMap<int, QList<LOrder*>> data;
+   /* QMap<int, QList<LOrder*>> data;
     QList<LOrder*> list;
     LOrder *com = nullptr;
     for (int i=0; i<10; i++)
@@ -23,10 +23,10 @@ LZWindow::LZWindow(QWidget *parent) :
         com->setName(QString("指令 %1").arg(i));
         list.push_back(com);
     }
-    data[1] = list;
+    data[1] = list;*/
 
-    m_pTreeMode = new LTreeMode(data);
-    ui->treeView->setModel(m_pTreeMode);
+
+
     ui->treeView->setHeaderHidden(true);
     ui->treeView->setSelectionMode(QAbstractItemView::SingleSelection);
 }
@@ -41,6 +41,9 @@ void LZWindow::init()
     m_pView->view("", Plugin::DataCenterPlugin()->getChartList(1));
     //Item *item = m_pView->addItem(LCType::LC_Node, QPoint(130,130));
     //item = m_pView->addItem(LCType::LC_Node, QPoint(130,130));
+
+    m_pTreeMode = new LTreeMode(Plugin::DataCenterPlugin()->getOrderList());
+    ui->treeView->setModel(m_pTreeMode);
 }
 
 
@@ -81,5 +84,7 @@ void LZWindow::on_pushButton_3_clicked()
 void LZWindow::on_pushButton_4_clicked()
 {
     m_pView->startTest();
+
+
 }
 

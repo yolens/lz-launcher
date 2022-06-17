@@ -3,22 +3,35 @@
 
 #include <QWidget>
 #include "LZLib.h"
-#include <QModbusClient>
-#include <QSerialPort>
+#include "DeviceWorker.h"
 
 const QString Table_Device_Modbus = "Device_Modbus";
 const auto CREATE_SQL_Device_Modbus = QLatin1String(R"(
     create table IF NOT EXISTS %1(
-                                    id integer primary key,
-                                    type integer        ,
-                                    name varchar        ,
-                                    mark varchar        ,
-                                    port varchar        ,
-                                    parity varchar      ,
-                                    baudRate varchar    ,
-                                    dataBits varchar    ,
-                                    stopBits varchar
+              id integer primary key
+            , type integer
+            , name varchar
+            , mark varchar
+            , port varchar
+            , parity varchar
+            , baudRate varchar
+            , dataBits varchar
+            , stopBits varchar
     ))").arg(Table_Device_Modbus);
+
+const QVector<QString> ALTER_Device_Modbus_LIST = {
+    {"type integer"},
+    {"name varchar"},
+    {"mark varchar"},
+    {"port varchar"},
+    {"parity varchar"},
+    {"baudRate varchar"},
+    {"dataBits varchar"},
+    {"stopBits varchar"},
+};
+const auto ALTER_SQL_Device_Modbus = QLatin1String(R"(
+    alter table %1 add %2
+    )").arg(Table_Device_Modbus).arg("%1");
 
 const auto INSERT_SQL_Device_Modbus = QLatin1String(R"(
     insert into %1(
@@ -111,7 +124,7 @@ public:
     ~DeviceCom();
 
     void init();
-    void action(const LOrder* order);
+
 
     static bool loadDb();
     virtual bool updateDb() override;
@@ -128,19 +141,23 @@ public:
     virtual void setBaudRate(const QString& value) override;
     virtual void setDataBits(const QString& value) override;
     virtual void setStopBits(const QString& value) override;
-private:
-    bool bindValue(QSqlQuery& query);
-    bool connectDevice();
 
-    void write(const LOrder* order);
-    QModbusDataUnit writeRequest(const LOrder* order) const;
+    virtual void execute(LOrder* order) override;
+public:
+    bool bindValue(QSqlQuery& query);
+
 protected:
     virtual void paintEvent(QPaintEvent * event) override;
 signals:
+    void changeDeviceName();
     void updateView();
+
+    void create_device();
+    void connect_device(const DeviceWorker::DeviceInfo& info);
+    void action_data();
 private slots:
-    void on_errorOccurred(QModbusDevice::Error error);
-    void on_stateChanged(QModbusDevice::State state);
+    void on_result(const int code);
+    void on_message(const QString& msg);
 
     void on_pushButton_connect_clicked();
 
@@ -151,13 +168,14 @@ private slots:
 private:
     Ui::DeviceCom *ui;
 
-    QModbusClient *m_modbusDevice = nullptr;
-
     QString m_port;
     QString m_parity = "No";
     QString m_baudRate = "9600";
     QString m_dataBits = "5";
     QString m_stopBits = "1";
+
+    DeviceWorker *m_worker = nullptr;
+    QList<LOrder*> m_orderList;
 
 };
 

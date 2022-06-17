@@ -2,7 +2,7 @@
 #include <QMimeData>
 #include <QDataStream>
 
-LTreeMode::LTreeMode(QMap<int, QList<LOrder*>>& data, QObject *parent)
+LTreeMode::LTreeMode(QMap<LOrder::Type, QList<LOrder*>>& data, QObject *parent)
     : QAbstractItemModel(parent)
 {
     m_root = new LTreeItem(nullptr);
@@ -40,7 +40,7 @@ QVariant LTreeMode::data(const QModelIndex &index, int role) const
 
     LTreeItem *item = static_cast<LTreeItem*>(index.internalPointer());
 
-    return item->data()->name();
+    return item->data()->name() + "#" + QString::number(item->data()->id);
 }
 
 
@@ -119,11 +119,11 @@ int LTreeMode::rowCount(const QModelIndex &parent) const
 }
 #pragma execution_character_set("utf-8")
 #include <QDebug>
-void LTreeMode::setupModelData(QMap<int, QList<LOrder*>>& data, LTreeItem *parent)
+void LTreeMode::setupModelData(QMap<LOrder::Type, QList<LOrder*>>& data, LTreeItem *parent)
 {
     m_clearInfoList.clear();
     LTreeItem *parentItem, *childItem;
-    QMap<int, QList<LOrder*>>::iterator it;
+    QMap<LOrder::Type, QList<LOrder*>>::iterator it;
     for (it = data.begin(); it != data.end(); it++)
     {
         LOrder* info = new LOrder; //节点头信息

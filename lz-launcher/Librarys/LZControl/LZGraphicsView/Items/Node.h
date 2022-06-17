@@ -1,4 +1,4 @@
-#ifndef NODE_H
+﻿#ifndef NODE_H
 #define NODE_H
 
 #include "Item.h"
@@ -20,8 +20,6 @@ protected:
     virtual void dropEvent(QGraphicsSceneDragDropEvent *event) override;
 signals:
 
-private:
-    QString m_name;
 };
 
 #endif // NODE_H

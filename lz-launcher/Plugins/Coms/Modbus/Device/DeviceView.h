@@ -20,11 +20,13 @@ public:
 private:
     void initCom(DeviceCom *com);
 protected:
+    virtual bool eventFilter(QObject *watched, QEvent *event) override;
     virtual void resizeEvent(QResizeEvent* event) override;
 private slots:
     void on_updateView();
     void on_pushButton_add_clicked();
-
+signals:
+    void changeDeviceName();
 private:
     Ui::DeviceView *ui;
 };

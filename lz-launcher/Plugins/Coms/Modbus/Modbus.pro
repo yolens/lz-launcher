@@ -35,8 +35,10 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     Device/DeviceCom.cpp \
     Device/DeviceView.cpp \
+    Device/DeviceWorker.cpp \
     ModbusData.cpp \
     ModbusPlugin.cpp \
+    ModbusWindow.cpp \
     Order/OrderCom.cpp \
     Order/OrderModel.cpp \
     Order/OrderView.cpp
@@ -44,8 +46,10 @@ SOURCES += \
 HEADERS += \
     Device/DeviceCom.h \
     Device/DeviceView.h \
+    Device/DeviceWorker.h \
     ModbusData.h \
     ModbusPlugin.h \
+    ModbusWindow.h \
     Order/OrderCom.h \
     Order/OrderModel.h \
     Order/OrderView.h
@@ -61,4 +65,5 @@ unix {
 FORMS += \
     Device/DeviceCom.ui \
     Device/DeviceView.ui \
+    ModbusWindow.ui \
     Order/OrderView.ui

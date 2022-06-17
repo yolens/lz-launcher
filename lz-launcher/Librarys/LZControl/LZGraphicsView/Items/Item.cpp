@@ -45,7 +45,10 @@ Item::~Item()
 void Item::setChart(LChart* p)
 {
     m_pChart = p;
-
+    if (nullptr != p)
+    {
+        m_pOrder = Plugin::DataCenterPlugin()->getOrder(p->m_orderId, p->m_orderType);
+    }
 }
 
 void Item::initTest()
@@ -56,14 +59,43 @@ void Item::initTest()
     update();
 }
 
+
 #include <QTimer>
+#include <QThread>
+#include <QEventLoop>
 void Item::startTest()
 {
-    m_testingTimer->start();
+    //m_testingTimer->start();
     m_testState = TestState::Testing;
     update();
 
-    QTimer::singleShot(6000, this, [=]()
+    m_testingTimes = 0;
+    while (true)
+    {
+        QThread::msleep(1000);
+        m_testingTimes++;
+        m_bDrawRect = (m_testingTimes%2 != 0);
+        update();
+        if (m_testingTimes > 6)
+            break;
+    }
+
+    if (nullptr != m_pOrder)
+    {
+        QEventLoop loop;
+        connect(this, &Item::finished, &loop, &QEventLoop::quit);
+        std::function<void(const QVariant value)> valueCallback = [=](const QVariant value)
+        {
+            emit finished();
+        };
+
+        LOrder *item = Plugin::DataCenterPlugin()->newOrder(m_pOrder);
+        item->setValueCallback(valueCallback);
+        Plugin::DataCenterPlugin()->execute(item);
+        loop.exec();
+    }
+
+    //QTimer::singleShot(6000, this, [=]()
     {
         m_testState = TestState::Ok;
         m_testingTimer->stop();
@@ -78,7 +110,8 @@ void Item::startTest()
                 break;
             }
         }
-    });
+    }
+    //);
 
 }
 
@@ -365,4 +398,9 @@ void Item::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     update();
     QGraphicsItem::hoverLeaveEvent(event);
 }
-
+#include <QMessageBox>
+void Item::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    QMessageBox::information(nullptr, "dfs","Dgasd");
+    QGraphicsItem::mouseDoubleClickEvent(event);
+}

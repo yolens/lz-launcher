@@ -25,6 +25,11 @@ public:
     virtual QMap<LOrder::Type, QList<LOrder*>>& getOrderList() = 0;
     virtual LOrder* newOrder(LOrder* p) = 0;
     virtual LOrder* getOrder(const int id, const int type) = 0;
+
+    virtual void registerDeviceState(std::function<void()> cb) = 0;
+    virtual void noticeDeviceState() = 0;
+    virtual QMap<LDevice::DeviceState, int> deviceStateList() = 0;
+    virtual QMap<LDevice::DeviceState, int> deviceStateListByType(const int type) = 0;
 };
 Q_DECLARE_INTERFACE(IDataCenter,"LZ.IDataCenter/1.0")
 

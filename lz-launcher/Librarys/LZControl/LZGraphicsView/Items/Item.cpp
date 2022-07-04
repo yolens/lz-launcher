@@ -3,21 +3,20 @@
 #include <QDebug>
 #include "LZLib.h"
 #include <QTimer>
+#include "../ChartDialog.h"
+
 
 Item::Item(QObject *parent, LCType type)
     : QObject(parent)
 {
+    Q_UNUSED(type);
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
     setZValue(-1);
     setAcceptHoverEvents(true);
 
-    m_rect = QRectF(0, 0, 100, 80);
-
-    m_testingTimer = new QTimer(this);
-    m_testingTimer->setInterval(1000);
-    connect(m_testingTimer, &QTimer::timeout, this, &Item::onTestingTimer);
+    m_rect = QRectF(0, 0, 200, 160);
 
 }
 
@@ -55,7 +54,6 @@ void Item::initTest()
 {
     m_testState = TestState::Normal;
     m_testingTimes = 0;
-    m_testingTimer->stop();
     update();
 }
 
@@ -63,56 +61,65 @@ void Item::initTest()
 #include <QTimer>
 #include <QThread>
 #include <QEventLoop>
+#include <QCoreApplication>
 void Item::startTest()
 {
-    //m_testingTimer->start();
-    m_testState = TestState::Testing;
-    update();
-
+    m_testingTimer = new QTimer();
+    m_testingTimer->setInterval(1000);
     m_testingTimes = 0;
-    while (true)
-    {
-        QThread::msleep(1000);
+    connect(m_testingTimer, &QTimer::timeout, this, [=]{
         m_testingTimes++;
         m_bDrawRect = (m_testingTimes%2 != 0);
         update();
-        if (m_testingTimes > 6)
-            break;
-    }
+    });
+    m_testingTimer->start();
+
+    m_testState = TestState::Testing;
+    update();
+
 
     if (nullptr != m_pOrder)
     {
+        int times = 0;
+        while (true)
+        {
+            int sec = qMin(1000, m_pChart->m_delay-times);
+            QThread::msleep(sec);
+            QCoreApplication::processEvents();
+            times += sec;
+            if (times >= m_pChart->m_delay-times)
+                break;
+        }
+
         QEventLoop loop;
         connect(this, &Item::finished, &loop, &QEventLoop::quit);
+        LOrder *item = Plugin::DataCenterPlugin()->newOrder(m_pOrder);
         std::function<void(const QVariant value)> valueCallback = [=](const QVariant value)
         {
+            m_inputValueList[item->valueId()] = item->value();
             emit finished();
         };
 
-        LOrder *item = Plugin::DataCenterPlugin()->newOrder(m_pOrder);
+
         item->setValueCallback(valueCallback);
+        QVariant sendValue;
+        if (m_inputValueList.contains(item->valueId()))
+            sendValue = m_inputValueList.value(item->valueId());
+        else
+            sendValue = m_pChart->m_value;
+        item->setValue(sendValue);
         Plugin::DataCenterPlugin()->execute(item);
         loop.exec();
+
+
     }
 
-    //QTimer::singleShot(6000, this, [=]()
-    {
-        m_testState = TestState::Ok;
-        m_testingTimer->stop();
-        m_bDrawRect = false;
-        update();
+    m_testState = TestState::Ok;
+    m_testingTimer->stop();
+    m_bDrawRect = false;
+    update();
 
-        foreach (LPoint *p, m_pointVec)
-        {
-            if (p->attribute == LPAttribute::output)
-            {
-                emit testing(p->id);
-                break;
-            }
-        }
-    }
-    //);
-
+    emit testing();
 }
 
 void Item::initData()
@@ -133,6 +140,26 @@ LChart* Item::getChart()
     return m_pChart;
 }
 
+LOrder* Item::getOrder()
+{
+    return m_pOrder;
+}
+
+QVector<LPoint*>& Item::getPointList()
+{
+    return m_pointVec;
+}
+
+void Item::setInputValue(const QString& id, const QVariant& value)
+{
+    m_inputValueList[id] = value;
+}
+
+QVariant Item::getInputValue(const QString& id)
+{
+    return m_inputValueList.value(id);
+}
+
 void Item::addLine(Item *item)
 {
     connect(item, &Item::removeLine, this, &Item::onRemoveLine);
@@ -148,12 +175,6 @@ void Item::onRemoveLine()
     m_lineList.removeAll(line);
 }
 
-void Item::onTestingTimer()
-{
-    m_testingTimes++;
-    m_bDrawRect = (m_testingTimes%2 != 0);
-    update();
-}
 
 void Item::updateChart()
 {
@@ -199,12 +220,12 @@ void Item::updatePoint()
             rv.append(i);
         }
         else if (i->type == LPType::value
-                    && i->attribute == LPAttribute::input)
+                    && i->attribute == LPAttribute::output)
         {
             bv.append(i);
         }
         else if (i->type == LPType::value
-                    && i->attribute == LPAttribute::output)
+                    && i->attribute == LPAttribute::input)
         {
             tv.append(i);
         }
@@ -264,8 +285,8 @@ QRectF Item::boundingRect() const
 QPainterPath Item::shape() const
 {
     QPainterPath path;
-    path.addEllipse(boundingRect());
-    //path.addRect(boundingRect());
+    //path.addEllipse(boundingRect());
+    path.addRect(boundingRect());
     return path;
 }
 void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -274,6 +295,7 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     Q_UNUSED(widget);
 
     QColor bgColor = QColor(26, 159, 255);
+    QColor penColor = Qt::white;
 
     bool bHover = false;
     switch (m_mouseState)
@@ -285,6 +307,7 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         bHover = true;
         break;
     case MouseState::Press:
+        penColor = Qt::red;
         bHover = true;
         break;
     default:
@@ -309,10 +332,15 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         break;
     }
 
-    painter->setPen(QPen(Qt::white, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->setPen(QPen(penColor, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->fillRect(boundingRect(), bgColor);
     if (m_bDrawRect || bHover)
         painter->drawRect(this->boundingRect());
+
+    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    int edge = POINT_SIZE + POINT_EDGE + 1;
+    QRectF inRect = this->boundingRect().adjusted(edge, edge, -edge, -edge);
+    painter->drawRect(inRect);
 
     painter->setPen(Qt::NoPen);
     foreach(auto i, m_pointVec)
@@ -346,12 +374,20 @@ void Item::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 }
 #include <QGraphicsSceneMouseEvent>
 
+void Item::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    const QPointF point = (event->pos() - m_startPos);
+    qDebug() << "HHHHHHHHH= " << point;
+    QGraphicsItem::mouseMoveEvent(event);
+}
+
 void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     switch (event->button())
     {
     case Qt::LeftButton:
     {
+        m_startPos = event->pos();
         m_mouseState = MouseState::Press;
 
         m_currentPointId = 0;
@@ -384,6 +420,35 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
 }
 void Item::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
+    QRectF left(this->boundingRect().left(), this->boundingRect().top(), DRAG_WIDTH, this->boundingRect().height());
+    QRectF top(this->boundingRect().left(), this->boundingRect().top(), this->boundingRect().width(), DRAG_WIDTH);
+    QRectF right(this->boundingRect().width()-DRAG_WIDTH, this->boundingRect().top(), DRAG_WIDTH, this->boundingRect().height());
+    QRectF bottom(this->boundingRect().left(), this->boundingRect().height()-DRAG_WIDTH, this->boundingRect().width(), DRAG_WIDTH);
+    if (left.contains(event->pos()))
+    {
+        m_dragType = DragType::Left;
+        setCursor(Qt::SizeHorCursor);
+    }
+    else if (right.contains(event->pos()))
+    {
+        m_dragType = DragType::Right;
+        setCursor(Qt::SizeHorCursor);
+    }
+    else if (top.contains(event->pos()))
+    {
+        m_dragType = DragType::Top;
+        setCursor(Qt::SizeVerCursor);
+    }
+    else if (bottom.contains(event->pos()))
+    {
+        m_dragType = DragType::Bottom;
+        setCursor(Qt::SizeVerCursor);
+    }
+    else
+    {
+        m_dragType = DragType::Center;
+        setCursor(Qt::ArrowCursor);
+    }
     QGraphicsItem::hoverMoveEvent(event);
 }
 void Item::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
@@ -398,9 +463,19 @@ void Item::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     update();
     QGraphicsItem::hoverLeaveEvent(event);
 }
-#include <QMessageBox>
+
 void Item::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-    QMessageBox::information(nullptr, "dfs","Dgasd");
+    if (nullptr == m_pChart || nullptr == m_pOrder)
+        return;
+    ChartDialog dlg;
+    ChartDialog::ChartInfo info;
+    info.value = m_pChart->m_value.isNull() ? m_pOrder->value() : m_pChart->m_value;
+    info.delay = m_pChart->m_delay;
+    dlg.setInfo(info);
+    dlg.exec();
+    m_pChart->m_value = dlg.info().value;
+    m_pChart->m_delay = dlg.info().delay;
+    updateChart();
     QGraphicsItem::mouseDoubleClickEvent(event);
 }

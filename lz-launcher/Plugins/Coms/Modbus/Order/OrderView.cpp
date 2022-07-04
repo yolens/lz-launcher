@@ -109,7 +109,6 @@ void OrderView::on_triggered(QAction *action)
     }
 }
 
-
 bool OrderView::eventFilter(QObject *watched, QEvent *event)
 {
     if (watched->inherits("QAbstractSpinBox") || watched->inherits("QComboBox"))

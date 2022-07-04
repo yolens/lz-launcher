@@ -57,6 +57,7 @@ Qt::ItemFlags LTreeMode::flags(const QModelIndex &index) const
 QVariant LTreeMode::headerData(int section, Qt::Orientation orientation,
                                int role) const
 {
+    Q_UNUSED(section);
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
     {
         if (m_root->data() != nullptr)

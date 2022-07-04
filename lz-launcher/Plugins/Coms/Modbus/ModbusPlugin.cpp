@@ -47,6 +47,7 @@ bool ModbusPlugin::initSettings()
 bool ModbusPlugin::startPlugin()
 {
     ModbusData::instance()->loadDb();
+    ModbusWindow::instance()->hide();
     return true;
 }
 bool ModbusPlugin::stopPlugin()
@@ -80,6 +81,25 @@ void ModbusPlugin::execute(LOrder *order)
     }
 
 }
+
+QMap<LDevice::DeviceState, int> ModbusPlugin::deviceStateList()
+{
+    QMap<LDevice::DeviceState, int> stateList;
+    QList<LDevice*> *list =  ModbusData::instance()->deviceList();
+    if (nullptr != list)
+    {
+        for (int i = 0; i<list->count(); i++)
+        {
+            if (stateList.contains(list->at(i)->deviceState()))
+                stateList[list->at(i)->deviceState()] += 1;
+            else
+                stateList[list->at(i)->deviceState()] = 1;
+        }
+
+    }
+    return stateList;
+}
+
 void ModbusPlugin::write(QVariant value)
 {
 
@@ -97,7 +117,7 @@ QWidget* ModbusPlugin::getWidget()
 void ModbusPlugin::showWindow(const bool show)
 {
     if (show)
-        ModbusWindow::instance()->show();
+        ModbusWindow::instance()->showMaximized();
     else
         ModbusWindow::instance()->hide();
 }
@@ -114,7 +134,7 @@ LOrder::Type ModbusPlugin::type()
 
 QList<LOrder*>& ModbusPlugin::orderList()
 {
- return ModbusData::instance()->orderList();
+    return ModbusData::instance()->orderList();
 }
 
 LOrder* ModbusPlugin::newOrder(LOrder* p)

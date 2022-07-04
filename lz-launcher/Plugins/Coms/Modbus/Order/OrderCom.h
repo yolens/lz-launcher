@@ -39,46 +39,46 @@ const auto ALTER_SQL_Order_Modbus = QLatin1String(R"(
 
 const auto INSERT_SQL_Order_Modbus = QLatin1String(R"(
     insert into %1(
-                    type            ,
-                    name            ,
-                    mark            ,
-                    value           ,
-                    deviceId        ,
-                    rwType          ,
-                    byteType        ,
-                    registerType    ,
-                    serverAddress   ,
-                    startAddress    ,
-                    numberOfValues
+                      type
+                    , name
+                    , mark
+                    , value
+                    , deviceId
+                    , rwType
+                    , byteType
+                    , registerType
+                    , serverAddress
+                    , startAddress
+                    , numberOfValues
                   )
             values(
-                    :type           ,
-                    :name           ,
-                    :mark           ,
-                    :value          ,
-                    :deviceId        ,
-                    :rwType         ,
-                    :byteType         ,
-                    :registerType    ,
-                    :serverAddress   ,
-                    :startAddress    ,
-                    :numberOfValues
+                      :type
+                    , :name
+                    , :mark
+                    , :value
+                    , :deviceId
+                    , :rwType
+                    , :byteType
+                    , :registerType
+                    , :serverAddress
+                    , :startAddress
+                    , :numberOfValues
                    )
     )").arg(Table_Order_Modbus);
 
 const auto UPDATE_SQL_Order_Modbus = QLatin1String(R"(
     update %1 set
-                    type=:type                      ,
-                    name=:name                      ,
-                    mark=:mark                      ,
-                    value=:value                    ,
-                    deviceId=:deviceId              ,
-                    rwType=:rwType                  ,
-                    byteType=:byteType              ,
-                    registerType=:registerType      ,
-                    serverAddress=:serverAddress    ,
-                    startAddress=:startAddress      ,
-                    numberOfValues=:numberOfValues
+                      type=:type
+                    , name=:name
+                    , mark=:mark
+                    , value=:value
+                    , deviceId=:deviceId
+                    , rwType=:rwType
+                    , byteType=:byteType
+                    , registerType=:registerType
+                    , serverAddress=:serverAddress
+                    , startAddress=:startAddress
+                    , numberOfValues=:numberOfValues
               where id=:id
     )").arg(Table_Order_Modbus);
 const auto DELETE_SQL_Order_Modbus = QLatin1String(R"(

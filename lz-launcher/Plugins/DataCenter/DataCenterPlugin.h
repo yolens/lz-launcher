@@ -45,11 +45,18 @@ public:
     virtual QMap<LOrder::Type, QList<LOrder*>>& getOrderList() override;
     virtual LOrder* newOrder(LOrder* p) override;
     virtual LOrder* getOrder(const int id, const int type) override;
+
+    virtual void registerDeviceState(std::function<void()> cb) override;
+    virtual void noticeDeviceState() override;
+    virtual QMap<LDevice::DeviceState, int> deviceStateList() override;
+    virtual QMap<LDevice::DeviceState, int> deviceStateListByType(const int type) override;
 private:
    // QMap<int, QMap<int, LChart>> m_chartList; //图表信息
     QMap<int, LPoint*> m_pointList; //自定义点信息列表
     QMap<int, LChart*> m_chartList;
     QMap<LOrder::Type, QList<LOrder*>> m_orderMap;
+
+    QList<std::function<void()>> m_deviceStateCallback;
 
 };
 

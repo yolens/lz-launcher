@@ -14,6 +14,8 @@ public:
     virtual LOrder::Type type() = 0;
     virtual QList<LOrder*>& orderList() = 0;
     virtual LOrder* newOrder(LOrder* p) = 0;
+
+    virtual QMap<LDevice::DeviceState, int> deviceStateList() = 0;
 };
 Q_DECLARE_INTERFACE(IOrder,"LZ.IOrder/1.0")
 

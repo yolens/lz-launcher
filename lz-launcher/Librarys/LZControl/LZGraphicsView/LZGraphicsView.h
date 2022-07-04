@@ -26,17 +26,22 @@ private:
     void init();
     void cancelEditing();
     void createUndoView();
+    void zoomIn();
+
+    void zoomOut();
+    void scaleView(qreal scaleFactor);
 protected:
     virtual void mouseMoveEvent(QMouseEvent *event) override;
     virtual void mousePressEvent(QMouseEvent *event) override;
     virtual void mouseReleaseEvent(QMouseEvent *event) override;
+    virtual void wheelEvent(QWheelEvent *event) override;
 private slots:
     void onAction(const Item::ActionType type);
     void onRemove();
-    void onTesting(const int outPointId);
     void onTestFinish();
 signals:
     void detect_start();
+    void sceneZoom(const int value);
 private:
     LZGraphicsScene *m_pScene = nullptr;
     Item *m_pSource = nullptr;

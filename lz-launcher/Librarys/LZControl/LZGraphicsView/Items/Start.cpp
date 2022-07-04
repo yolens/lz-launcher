@@ -40,12 +40,6 @@ void Start::startTest()
     m_testState = TestState::Testing;
     update();
 
-    foreach (LPoint *p, m_pointVec)
-    {
-        if (p->attribute == LPAttribute::output)
-        {
-            emit testing(p->id);
-            break;
-        }
-    }
+    emit testing();
+
 }

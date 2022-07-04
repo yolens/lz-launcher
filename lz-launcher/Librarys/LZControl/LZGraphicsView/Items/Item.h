@@ -4,10 +4,14 @@
 #include <QGraphicsItem>
 #include <QMetaEnum>
 #include "LDB.h"
+#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
 
 const int POINT_SIZE = 10;
 const int POINT_EDGE = 3;
 const int POINT_BIG_SIZE = 30;
+const int DRAG_WIDTH = 3;
 
 class Item : public QObject, public QGraphicsItem
 {
@@ -35,6 +39,19 @@ public:
         Ok,
         Fail,
     };
+
+    enum DragType
+    {
+        //没有进行拖拽
+        Release,
+
+        //五个点的定义
+        Left,
+        Right,
+        Top,
+        Bottom,
+        Center,
+    };
 public:
     explicit Item(QObject *parent = nullptr, LCType type = LC_None);
     virtual ~Item();
@@ -44,6 +61,10 @@ public:
     void updateChart();
     void insertPoint(LPoint* p);
     LChart* getChart();
+    LOrder* getOrder();
+    QVector<LPoint*>& getPointList();
+    void setInputValue(const QString& id, const QVariant& value);
+    QVariant getInputValue(const QString& id);
 
     void initTest(); //初始化测试
     virtual void startTest(); //开始检测
@@ -69,20 +90,20 @@ protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
     virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
     virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 private slots:
     void onRemoveLine();
-    void onTestingTimer();
 signals:
     void finished();
     void action(const Item::ActionType type);
     void remove();
     void adjust();
     void removeLine();
-    void testing(const int outPointId);
+    void testing();
     void testFinish();
 private:
 
@@ -100,6 +121,9 @@ private:
     int m_testingTimes = 0;
     QTimer *m_testingTimer = nullptr;
     bool m_bDrawRect = false;
+    QMap<QString, QVariant> m_inputValueList;
+    DragType m_dragType = DragType::Release;
+    QPointF m_startPos;
 };
 
 #endif // ITEM_H

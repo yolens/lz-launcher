@@ -25,14 +25,14 @@ DeviceView::DeviceView(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
     QList<LDevice*> *list = ModbusData::instance()->deviceList();
-    //list->clear();
     if (nullptr != list)
     {
         for (int i = 0; i<list->count(); i++)
         {
             DeviceCom *com = dynamic_cast<DeviceCom*>(list->value(i));
-            initCom(com);
+            initCom(com, true);
         }
 
     }
@@ -46,7 +46,7 @@ DeviceView::DeviceView(QWidget *parent) :
         cb->installEventFilter(this);
     }
 
-    float ff = 2.345;
+    float ff = static_cast<float>(2.345);
     long l = FloatToHex(ff);
     qDebug() << "UUU= " << QString::number(l, 16) << l;
 
@@ -65,12 +65,14 @@ DeviceView::~DeviceView()
     delete ui;
 }
 
-void DeviceView::initCom(DeviceCom *com)
+void DeviceView::initCom(DeviceCom *com, const bool autoConnect)
 {
     connect(com, &DeviceCom::updateView, this, &DeviceView::on_updateView);
     connect(com, &DeviceCom::changeDeviceName, this, &DeviceView::changeDeviceName);
-    com->init();
     com->setParent(ui->scrollAreaWidgetContents);
+    com->init();
+    if (autoConnect)
+        com->connectDevice();
 }
 #include <QtDebug>
 void DeviceView::adjustView()

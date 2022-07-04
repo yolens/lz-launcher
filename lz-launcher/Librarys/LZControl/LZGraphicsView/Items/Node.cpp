@@ -30,9 +30,13 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(QPen(Qt::black));
     if (nullptr != m_pOrder)
     {
-        QRectF textRect = this->boundingRect();
-        textRect.adjust(20.0, 0.0, -20.0, 0.0);
-        painter->drawText(textRect, Qt::AlignCenter | Qt::TextWordWrap, m_pOrder->name());
+        int edge = POINT_SIZE + POINT_EDGE + 3;
+        QRectF textRect = this->boundingRect().adjusted(edge, edge, -edge, -edge);
+
+        QString dtext = QString("名称：%1").arg(m_pOrder->name());
+        dtext += "\r\n";
+        dtext += QString("测试：%1").arg("dsf");
+        painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, dtext);
     }
     painter->drawText(this->boundingRect().x()+5, this->boundingRect().bottom()-5, QString::number(m_testingTimes));
 }
@@ -62,7 +66,7 @@ void Node::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
     QGraphicsItem::dragLeaveEvent(event);
 }
 
-
+#include <QDebug>
 void Node::dropEvent(QGraphicsSceneDragDropEvent *event)
 {
     if (event->mimeData()->hasFormat("Node/OrderTree"))
@@ -75,9 +79,30 @@ void Node::dropEvent(QGraphicsSceneDragDropEvent *event)
         LOrder* com = (LOrder*)(node);
         if (com != nullptr)
         {
+            foreach (LPoint *p, m_pointVec)
+            {
+                if (p->type == LPType::value)
+                {
+                    Plugin::DataCenterPlugin()->removePoint(p);
+                    m_pointVec.removeAll(p);
+                }
+            }
+
             m_pOrder = com;
             m_pChart->m_orderId = com->id;
             m_pChart->m_orderType = com->type();
+
+            LPoint *p = new LPoint();
+            p->type = LPType::value;
+            if (LOrder::Read == com->rwType())
+                p->attribute = LPAttribute::output;
+            else
+                p->attribute = LPAttribute::input;
+            p->valueId = com->valueId();
+            p->chartId = m_pChart->id;
+            insertPoint(p);
+            updatePoint();
+
             updateChart();
             update();
         }

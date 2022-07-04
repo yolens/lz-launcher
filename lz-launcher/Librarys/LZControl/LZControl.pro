@@ -35,6 +35,7 @@ SOURCES += \
     LTreeItem.cpp \
     LTreeMode.cpp \
     LZControl.cpp \
+    LZGraphicsView/ChartDialog.cpp \
     LZGraphicsView/Commands.cpp \
     LZGraphicsView/DetectWorker.cpp \
     LZGraphicsView/Items/Finish.cpp \
@@ -54,6 +55,7 @@ HEADERS += \
     LTreeMode.h \
     LZControl_global.h \
     LZControl.h \
+    LZGraphicsView/ChartDialog.h \
     LZGraphicsView/Commands.h \
     LZGraphicsView/DetectWorker.h \
     LZGraphicsView/Items/Finish.h \
@@ -73,4 +75,5 @@ unix {
 !isEmpty(target.path): INSTALLS += target
 
 FORMS += \
+    LZGraphicsView/ChartDialog.ui \
     LZGraphicsView/LZWindow.ui

@@ -21,6 +21,7 @@ private:
     void addItem();
 protected:
     virtual bool eventFilter(QObject *watched, QEvent *event) override;
+
 private slots:
     void on_pressed(const QModelIndex &index);
     void on_triggered(QAction *action);

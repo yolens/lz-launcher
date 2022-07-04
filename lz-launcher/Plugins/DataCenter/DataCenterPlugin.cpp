@@ -82,6 +82,7 @@ bool DataCenterPlugin::stopPlugin()
 
 QList<LChart*> DataCenterPlugin::getChartList(const int id)
 {
+    Q_UNUSED(id);
     QList<LChart*> list;
     foreach(LChart* p, m_chartList)
     {
@@ -243,4 +244,57 @@ LOrder* DataCenterPlugin::getOrder(const int id, const int type)
         }
     }
     return nullptr;
+}
+
+QMap<LDevice::DeviceState, int> DataCenterPlugin::deviceStateList()
+{
+    QMap<LDevice::DeviceState, int> stateList;
+    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
+    foreach (IPlugin *plugin, list)
+    {
+        IOrder* orderPlugin = qobject_cast<IOrder*>(plugin->instance());
+        if (nullptr != orderPlugin)
+        {
+            QMap<LDevice::DeviceState, int> tempList = orderPlugin->deviceStateList();
+            foreach (LDevice::DeviceState state, tempList.keys())
+            {
+                if (stateList.contains(state))
+                    stateList[state] += tempList.value(state);
+                else
+                    stateList[state] = tempList.value(state);
+            }
+        }
+    }
+    return stateList;
+}
+
+QMap<LDevice::DeviceState, int> DataCenterPlugin::deviceStateListByType(const int type)
+{
+    QMap<LDevice::DeviceState, int> stateList;
+    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
+    foreach (IPlugin *plugin, list)
+    {
+        IOrder* orderPlugin = qobject_cast<IOrder*>(plugin->instance());
+        if (nullptr != orderPlugin)
+        {
+            if (static_cast<LOrder::Type>(type) == orderPlugin->type())
+            {
+                return orderPlugin->deviceStateList();
+            }
+        }
+    }
+    return stateList;
+}
+
+void DataCenterPlugin::registerDeviceState(std::function<void()> cb)
+{
+    m_deviceStateCallback.append(cb);
+}
+
+void DataCenterPlugin::noticeDeviceState()
+{
+    foreach (std::function<void()> callback, m_deviceStateCallback)
+    {
+        callback();
+    }
 }

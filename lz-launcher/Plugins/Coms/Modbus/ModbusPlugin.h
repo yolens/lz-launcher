@@ -35,6 +35,7 @@ public:
     virtual LOrder::Type type() override;
     virtual QList<LOrder*>& orderList() override;
     virtual LOrder* newOrder(LOrder* p) override;
+    virtual QMap<LDevice::DeviceState, int> deviceStateList() override;
 };
 
 #endif // MODBUSPLUGIN_H

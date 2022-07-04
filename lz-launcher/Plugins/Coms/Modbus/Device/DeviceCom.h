@@ -17,6 +17,7 @@ const auto CREATE_SQL_Device_Modbus = QLatin1String(R"(
             , baudRate varchar
             , dataBits varchar
             , stopBits varchar
+            , useEnable integer
     ))").arg(Table_Device_Modbus);
 
 const QVector<QString> ALTER_Device_Modbus_LIST = {
@@ -28,6 +29,7 @@ const QVector<QString> ALTER_Device_Modbus_LIST = {
     {"baudRate varchar"},
     {"dataBits varchar"},
     {"stopBits varchar"},
+    {"useEnable integer"},
 };
 const auto ALTER_SQL_Device_Modbus = QLatin1String(R"(
     alter table %1 add %2
@@ -35,37 +37,40 @@ const auto ALTER_SQL_Device_Modbus = QLatin1String(R"(
 
 const auto INSERT_SQL_Device_Modbus = QLatin1String(R"(
     insert into %1(
-                    type        ,
-                    name        ,
-                    mark        ,
-                    port        ,
-                    parity      ,
-                    baudRate    ,
-                    dataBits    ,
-                    stopBits
+                      type
+                    , name
+                    , mark
+                    , port
+                    , parity
+                    , baudRate
+                    , dataBits
+                    , stopBits
+                    , useEnable
                   )
             values(
-                    :type       ,
-                    :name       ,
-                    :mark       ,
-                    :port       ,
-                    :parity     ,
-                    :baudRate   ,
-                    :dataBits   ,
-                    :stopBits
+                      :type
+                    , :name
+                    , :mark
+                    , :port
+                    , :parity
+                    , :baudRate
+                    , :dataBits
+                    , :stopBits
+                    , :useEnable
                    )
     )").arg(Table_Device_Modbus);
 
 const auto UPDATE_SQL_Device_Modbus = QLatin1String(R"(
     update %1 set
-                    type=:type          ,
-                    name=:name          ,
-                    mark=:mark          ,
-                    port=:port          ,
-                    parity=:parity      ,
-                    baudRate=:baudRate  ,
-                    dataBits=:dataBits  ,
-                    stopBits=:stopBits
+                      type=:type
+                    , name=:name
+                    , mark=:mark
+                    , port=:port
+                    , parity=:parity
+                    , baudRate=:baudRate
+                    , dataBits=:dataBits
+                    , stopBits=:stopBits
+                    , useEnable=:useEnable
               where id=:id
     )").arg(Table_Device_Modbus);
 const auto DELETE_SQL_Device_Modbus = QLatin1String(R"(
@@ -119,12 +124,13 @@ private:
         {"3"        , QSerialPort::OneAndHalfStop},
     };
     QStringList StopBitsL = {"1", "2", "3"};
+
 public:
     explicit DeviceCom(QWidget *parent = nullptr);
     ~DeviceCom();
 
     void init();
-
+    void connectDevice();
 
     static bool loadDb();
     virtual bool updateDb() override;
@@ -136,16 +142,20 @@ public:
     virtual QString baudRate() override;
     virtual QString dataBits() override;
     virtual QString stopBits() override;
+    virtual bool useEnable() override;
     virtual void setPort(const QString& value) override;
     virtual void setParity(const QString& value) override;
     virtual void setBaudRate(const QString& value) override;
     virtual void setDataBits(const QString& value) override;
     virtual void setStopBits(const QString& value) override;
+    virtual void setUseEnable(const bool value) override;
 
     virtual void execute(LOrder* order) override;
+    virtual LDevice::DeviceState deviceState() override;
 public:
     bool bindValue(QSqlQuery& query);
-
+private:
+    void changeDeviceState(const LDevice::DeviceState state);
 protected:
     virtual void paintEvent(QPaintEvent * event) override;
 signals:
@@ -165,17 +175,20 @@ private slots:
 
     void on_pushButton_delete_clicked();
 
+
 private:
     Ui::DeviceCom *ui;
 
-    QString m_port;
+    QString m_port = "COM1";
     QString m_parity = "No";
     QString m_baudRate = "9600";
-    QString m_dataBits = "5";
+    QString m_dataBits = "8";
     QString m_stopBits = "1";
+    bool    m_useEnable = false;
 
     DeviceWorker *m_worker = nullptr;
     QList<LOrder*> m_orderList;
+    LDevice::DeviceState m_deviceState = LDevice::DeviceState::disenabled;
 
 };
 

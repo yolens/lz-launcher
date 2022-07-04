@@ -1,4 +1,4 @@
-#include "Virtual.h"
+﻿#include "Virtual.h"
 #include <QPainter>
 
 Virtual::Virtual(QObject *parent)
@@ -21,5 +21,7 @@ QPainterPath Virtual::shape() const
 
 void Virtual::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
     painter->fillRect(boundingRect(), Qt::green);
 }

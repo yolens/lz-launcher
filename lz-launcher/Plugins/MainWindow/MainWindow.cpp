@@ -24,8 +24,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
+
     m_pWindow->init();
     ui->page_comsMgr->init();
+    ui->page_main->init();
 }
 
 void MainWindow::on_action(const int type)

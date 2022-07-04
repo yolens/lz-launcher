@@ -1,4 +1,4 @@
-#include "Line.h"
+﻿#include "Line.h"
 #include <QPainter>
 #include <QtMath>
 #include "LZLib.h"
@@ -97,9 +97,16 @@ void Line::adjustLine()
 
 }
 
+QPainterPath Line::shape() const
+{
+    QPainterPath path;
+    path.addPolygon(m_arrowHead);
+    return path;
+}
+
 QRectF Line::boundingRect() const
 {
-    if (!m_pSource || !m_pDest)
+   /* if (!m_pSource || !m_pDest)
         return QRectF();
 
     qreal penWidth = 1;
@@ -108,7 +115,10 @@ QRectF Line::boundingRect() const
     return QRectF(m_sourcePoint, QSizeF(m_destPoint.x() - m_sourcePoint.x(),
                                       m_destPoint.y() - m_sourcePoint.y()))
         .normalized()
-        .adjusted(-extra, -extra, extra, extra);
+        .adjusted(-extra, -extra, extra, extra);*/
+    QPainterPath path;
+    path.addPolygon(m_arrowHead);
+    return path.boundingRect();
 }
 
 void Line::startTest()
@@ -119,6 +129,8 @@ void Line::startTest()
 
 void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
    // painter->fillRect(this->boundingRect(), QColor(255,0,0));
 
     QLineF line(m_sourcePoint, m_destPoint);
@@ -142,9 +154,10 @@ void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     default:
         break;
     }
+
     // Draw the line itself
     painter->setPen(QPen(bgColor, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    painter->drawLine(line);
+    //painter->drawLine(line);
 
 
     // Draw the arrows
@@ -156,7 +169,12 @@ void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                                               cos(angle - M_PI + M_PI / 3) * 6);
 
     painter->setBrush(bgColor);
-    painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
+
+    m_arrowHead.clear();
+    m_arrowHead << line.p2() << destArrowP1 << destArrowP2;
+    painter->drawLine(line);
+    painter->drawPolygon(m_arrowHead);
+    m_arrowHead << line.p1();
 }
 /*
 void Line::mousePressEvent(QGraphicsSceneMouseEvent *event)

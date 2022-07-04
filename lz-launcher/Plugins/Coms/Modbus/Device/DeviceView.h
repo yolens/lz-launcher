@@ -18,7 +18,7 @@ public:
 
     void adjustView();
 private:
-    void initCom(DeviceCom *com);
+    void initCom(DeviceCom *com, const bool autoConnect = false);
 protected:
     virtual bool eventFilter(QObject *watched, QEvent *event) override;
     virtual void resizeEvent(QResizeEvent* event) override;

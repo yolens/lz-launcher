@@ -6,6 +6,9 @@
 #include <QVector>
 #include <QVariant>
 
+const QString ORDER_VALUE_ID = "order";
+const QString VIEW_VALUE_ID = "view";
+
 class LZLIB_EXPORT LDB
 {
 public:
@@ -51,6 +54,7 @@ public:
     LPAttribute     attribute;
     int             max = 1;
     int             chartId = 0; //父亲容器
+    QString         valueId; //对应值的入口
 
     QRect           rect;
     int             count = 0;
@@ -63,6 +67,7 @@ const auto CREATE_SQL_LPoint = QLatin1String(R"(
         , attribute integer
         , max integer
         , chartId integer
+        , valueId varchar
     ))").arg(Table_LPoint);
 
 const QVector<QString> ALTER_LPoint_LIST = {
@@ -71,14 +76,29 @@ const QVector<QString> ALTER_LPoint_LIST = {
     {"attribute integer"},
     {"max integer"},
     {"chartId integer"},
+    {"valueId valueId"},
 };
 const auto ALTER_SQL_LPoint = QLatin1String(R"(
     alter table %1 add %2
     )").arg(Table_LPoint).arg("%1");
 
 const auto INSERT_SQL_LPoint = QLatin1String(R"(
-    insert into %1(name, type, attribute, max, chartId)
-            values(:name, :type, :attribute, :max, :chartId)
+    insert into %1(
+                      name
+                    , type
+                    , attribute
+                    , max
+                    , chartId
+                    , valueId
+                  )
+            values(
+                      :name
+                    , :type
+                    , :attribute
+                    , :max
+                    , :chartId
+                    , :valueId
+                  )
     )").arg(Table_LPoint);
 
 const auto SELECT_SQL_LPoint = QLatin1String(R"(
@@ -123,8 +143,8 @@ public:
     int             m_orderId = 0;
     int             m_orderType = 0;
 
-    int             m_delay; //ms
-    QVariant        m_value;
+    int             m_delay = 100; //ms
+    QVariant        m_value = QVariant();
 };
 const auto CREATE_SQL_LChart = QLatin1String(R"(
     create table IF NOT EXISTS %1(
@@ -224,6 +244,8 @@ public:
     LOrder();
     virtual ~LOrder();
 
+    QString valueId() {return ORDER_VALUE_ID;};
+
     virtual bool updateDb() override;
     virtual bool insertDb() override;
     virtual bool removeDb() override;
@@ -273,6 +295,12 @@ private:
 class LZLIB_EXPORT LDevice : public LDB
 {
 public:
+    enum DeviceState{
+        disenabled = 0,
+        connectSuc,
+        connectFail,
+    };
+public:
     LDevice();
     virtual ~LDevice();
 
@@ -293,13 +321,16 @@ public:
     virtual QString baudRate(){return QString();};
     virtual QString dataBits(){return QString();};
     virtual QString stopBits(){return QString();};
-    virtual void setPort(const QString& value){};
-    virtual void setParity(const QString& value){};
-    virtual void setBaudRate(const QString& value){};
-    virtual void setDataBits(const QString& value){};
-    virtual void setStopBits(const QString& value){};
+    virtual bool useEnable(){return false;};
+    virtual void setPort(const QString& value){Q_UNUSED(value);};
+    virtual void setParity(const QString& value){Q_UNUSED(value);};
+    virtual void setBaudRate(const QString& value){Q_UNUSED(value);};
+    virtual void setDataBits(const QString& value){Q_UNUSED(value);};
+    virtual void setStopBits(const QString& value){Q_UNUSED(value);};
+    virtual void setUseEnable(const bool value){Q_UNUSED(value);};
 
     virtual void execute(LOrder* order) = 0;
+    virtual DeviceState deviceState() = 0;
 private:
     LOrder::Type    m_type;
     QString         m_name;

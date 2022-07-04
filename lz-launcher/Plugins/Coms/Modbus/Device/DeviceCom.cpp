@@ -7,9 +7,6 @@
 #include <QMessageBox>
 #include <QStyleOption>
 #include <QPainter>
-#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
 
 DeviceCom::DeviceCom(QWidget *parent) :
     QWidget(parent),
@@ -30,7 +27,7 @@ DeviceCom::DeviceCom(QWidget *parent) :
             query.exec(cmd);
         }
     }
-    this->setStyleSheet(".DeviceCom{background-color: rgb(255, 170, 127);}");
+    changeDeviceState(LDevice::DeviceState::disenabled);
     ui->textEdit_mark->setFixedHeight(60);
     this->setType(LOrder::Modbus);
     foreach (auto i, ParityL)
@@ -50,6 +47,19 @@ DeviceCom::DeviceCom(QWidget *parent) :
         ui->comboBox_stop->addItem(i);
     }
 
+    connect(ui->checkBox_enable, &QCheckBox::toggled, this, [=]{
+        if (ui->checkBox_enable->isChecked())
+        {
+            changeDeviceState(LDevice::DeviceState::connectFail);
+            ui->pushButton_connect->setEnabled(true);
+        }
+        else
+        {
+            changeDeviceState(LDevice::DeviceState::disenabled);
+            ui->pushButton_connect->setEnabled(false);
+        }
+    });
+
     m_worker = new DeviceWorker();
     connect(this, &DeviceCom::create_device, m_worker, &DeviceWorker::on_create_device);
     connect(this, &DeviceCom::connect_device, m_worker, &DeviceWorker::on_connect_device);
@@ -58,10 +68,8 @@ DeviceCom::DeviceCom(QWidget *parent) :
     connect(m_worker, &DeviceWorker::result, this, &DeviceCom::on_result);
     m_worker->start();
 
-
-    emit create_device();
-
    // ui->comboBox_parity->setItemData(ui->comboBox_parity->findText("Even"), false, Qt::UserRole-1);
+
 }
 
 DeviceCom::~DeviceCom()
@@ -74,19 +82,37 @@ DeviceCom::~DeviceCom()
     delete ui;
 }
 
+LDevice::DeviceState DeviceCom::deviceState()
+{
+    return m_deviceState;
+}
+
+void DeviceCom::changeDeviceState(const LDevice::DeviceState state)
+{
+    m_deviceState = state;
+    switch (state)
+    {
+    case LDevice::DeviceState::connectSuc:
+        this->setStyleSheet(".DeviceCom{background-color:rgb(0,255,0);}");
+        break;
+    case LDevice::DeviceState::connectFail:
+        this->setStyleSheet(".DeviceCom{background-color:rgb(255,0,0);}");
+        break;
+    case LDevice::DeviceState::disenabled:
+        this->setStyleSheet(".DeviceCom{background-color:rgb(130,130,130);}");
+        break;
+    default:
+        break;
+    }
+    Plugin::DataCenterPlugin()->noticeDeviceState();
+}
+
 void DeviceCom::on_result(const int code)
 {
     DeviceWorker::Result result = (DeviceWorker::Result)code;
     switch (result)
     {
-    case DeviceWorker::UnconnectedResult:
-        ui->pushButton_connect->setText("连接");
-        break;
-    case DeviceWorker::ConnectedResult:
-        ui->pushButton_connect->setText("断开");
-        emit action_data();
-        break;
-    case DeviceWorker::FinishResult:
+    case DeviceWorker::CreateFinished:
     {
         DeviceWorker::DeviceInfo info;
         info.port = this->port();
@@ -95,6 +121,41 @@ void DeviceCom::on_result(const int code)
         info.dataBits = DataBitsM.value(this->dataBits());
         info.stopBits = StopBitsM.value(this->stopBits());
         emit connect_device(info);
+    }
+        break;
+    case DeviceWorker::UnconnectedResult:
+    {
+        changeDeviceState(LDevice::DeviceState::connectFail);
+        foreach (QObject* obj, this->children())
+        {
+            if (obj->isWidgetType())
+            {
+                static_cast<QWidget*>(obj)->setEnabled(true);
+            }
+        }
+        ui->pushButton_connect->setText("连接");
+    }
+        break;
+    case DeviceWorker::ConnectedResult:
+    {
+        changeDeviceState(LDevice::DeviceState::connectSuc);
+
+        foreach (QObject* obj, this->children())
+        {
+            if (obj->isWidgetType())
+            {
+                static_cast<QWidget*>(obj)->setEnabled(false);
+            }
+        }
+        ui->pushButton_connect->setEnabled(true);
+        ui->pushButton_connect->setText("断开");
+        emit action_data();
+    }
+        break;
+    case DeviceWorker::FinishResult:
+    {
+        emit create_device();
+
     }
         break;
     default:
@@ -116,7 +177,14 @@ void DeviceCom::init()
     ui->comboBox_baud->setCurrentText(this->baudRate());
     ui->comboBox_data->setCurrentText(this->dataBits());
     ui->comboBox_stop->setCurrentText(this->stopBits());
-    ui->textEdit_mark->setText(this->mark());
+    ui->textEdit_mark->setText(this->mark()); 
+    ui->checkBox_enable->setChecked(this->useEnable());
+    emit ui->checkBox_enable->toggled(true);
+}
+
+void DeviceCom::connectDevice()
+{
+    on_pushButton_connect_clicked();
 }
 
 void DeviceCom::execute(LOrder* order)
@@ -143,6 +211,7 @@ bool DeviceCom::loadDb()
     int baudRate = rec.indexOf("baudRate");
     int dataBits = rec.indexOf("dataBits");
     int stopBits = rec.indexOf("stopBits");
+    int useEnable = rec.indexOf("useEnable");
 
     while (query.next())
     {
@@ -156,6 +225,7 @@ bool DeviceCom::loadDb()
         info->setBaudRate(query.value(baudRate).toString());
         info->setDataBits(query.value(dataBits).toString());
         info->setStopBits(query.value(stopBits).toString());
+        info->setUseEnable(query.value(useEnable).toBool());
         list.push_back(info);
     }
     ModbusData::instance()->setDeviceList(list);
@@ -207,6 +277,7 @@ bool DeviceCom::bindValue(QSqlQuery& query)
     query.bindValue(":baudRate", this->baudRate());
     query.bindValue(":dataBits", this->dataBits());
     query.bindValue(":stopBits", this->stopBits());
+    query.bindValue(":useEnable", this->useEnable());
     return true;
 }
 
@@ -230,6 +301,10 @@ QString DeviceCom::stopBits()
 {
     return m_stopBits;
 }
+bool DeviceCom::useEnable()
+{
+    return m_useEnable;
+}
 void DeviceCom::setPort(const QString& value)
 {
     m_port = value;
@@ -251,6 +326,11 @@ void DeviceCom::setStopBits(const QString& value)
     m_stopBits = value;
 }
 
+void DeviceCom::setUseEnable(const bool value)
+{
+    m_useEnable = value;
+}
+
 void DeviceCom::paintEvent(QPaintEvent * event)
 {
     Q_UNUSED(event);
@@ -263,8 +343,10 @@ void DeviceCom::paintEvent(QPaintEvent * event)
 
 void DeviceCom::on_pushButton_connect_clicked()
 {
-    m_worker->actionDataStop();
-
+    if (ui->checkBox_enable->isChecked())
+    {
+        m_worker->actionDataStop();
+    }
 }
 
 
@@ -277,6 +359,7 @@ void DeviceCom::on_pushButton_save_clicked()
     this->setDataBits(ui->comboBox_data->currentText());
     this->setStopBits(ui->comboBox_stop->currentText());
     this->setMark(ui->textEdit_mark->document()->toPlainText());
+    this->setUseEnable(ui->checkBox_enable->isChecked());
     ModbusData::instance()->update(this);
     emit changeDeviceName();
 }
@@ -290,4 +373,5 @@ void DeviceCom::on_pushButton_delete_clicked()
         delete this;
     }
 }
+
 

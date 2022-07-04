@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(255, 170, 127);</string>
+   <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="1" column="0" colspan="2">
@@ -104,6 +104,13 @@
    </item>
    <item row="0" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout_7">
+     <item>
+      <widget class="QCheckBox" name="checkBox_enable">
+       <property name="text">
+        <string>启用</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QPushButton" name="pushButton_connect">
        <property name="text">

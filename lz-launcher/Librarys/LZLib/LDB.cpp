@@ -2,6 +2,8 @@
 #include <QCoreApplication>
 #include <QtSql>
 
+
+
 LDB::LDB()
 {
 
@@ -55,6 +57,7 @@ QList<LPoint*> LPoint::get()
     int attribute = rec.indexOf("attribute");
     int max = rec.indexOf("max");
     int chartId = rec.indexOf("chartId");
+    int valueId = rec.indexOf("valueId");
 
     while (query.next())
     {
@@ -65,6 +68,8 @@ QList<LPoint*> LPoint::get()
         info->attribute = (LPAttribute)query.value(attribute).toInt();
         info->max = query.value(max).toInt();
         info->chartId = query.value(chartId).toInt();
+        info->valueId = query.value(valueId).toString();
+
         list.push_back(info);
     }
     return list;
@@ -86,6 +91,7 @@ bool LPoint::insertDb()
     query.bindValue(":attribute", this->attribute);
     query.bindValue(":max", this->max);
     query.bindValue(":chartId", this->chartId);
+    query.bindValue(":valueId", this->valueId);
     if (!query.exec())
         return false;
     this->id  = query.lastInsertId().toInt();

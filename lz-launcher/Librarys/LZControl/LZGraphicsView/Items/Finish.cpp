@@ -36,5 +36,5 @@ void Finish::startTest()
 {
     m_testState = TestState::Testing;
     update();
-    emit testFinish();
+    emit testing();
 }

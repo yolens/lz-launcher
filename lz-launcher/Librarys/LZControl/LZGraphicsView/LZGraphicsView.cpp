@@ -32,6 +32,7 @@ void LZGraphicsView::init()
 
     m_worker = new DetectWorker();
     connect(this, &LZGraphicsView::detect_start, m_worker, &DetectWorker::on_detect_start);
+    connect(m_worker, &DetectWorker::testFinished, this, &LZGraphicsView::onTestFinish);
     m_worker->start();
 
     createUndoView();
@@ -57,57 +58,28 @@ void LZGraphicsView::startTest()
     QList<Item*> list;
     foreach (QGraphicsItem *gi, m_pScene->items())
     {
+        gi->setEnabled(false);
         list.append(qgraphicsitem_cast<Item*>(gi));
     }
     m_worker->setList(list);
-    emit detect_start();
-    /*Item *start = nullptr;
-    QList<QGraphicsItem *> list = m_pScene->items();
-    foreach (QGraphicsItem *gi, list)
-    {
-        Item *item = qgraphicsitem_cast<Item*>(gi);
-        item->initTest();
-        if (item->getChart()->m_type == LCType::LC_Start)
-        {
-            start = item;
-        }
-    }
-    if (start)
-        start->startTest();*/
-}
 
+    emit detect_start();
+}
+#include <QMessageBox>
 void LZGraphicsView::onTestFinish()
 {
-
-}
-
-void LZGraphicsView::onTesting(const int outPointId)
-{
-   // Item *item = qobject_cast<Item*>(sender());
-   // if (nullptr == item)
-   //     return;
-
-    /*QList<QGraphicsItem *> list = m_pScene->items();
-    foreach (QGraphicsItem *gi, list)
+    //QMessageBox::information(nullptr, "finish" , "finish");
+    foreach (QGraphicsItem *gi, m_pScene->items())
     {
-        Item *item = qgraphicsitem_cast<Item*>(gi);
-        if (item->getChart()->m_sourcePointId == outPointId)
-        {
-            item->startTest();
-            Item *dest = item->getDest();
-            if (nullptr != dest)
-            {
-                dest->startTest();
-                break;
-            }
-        }
-    }*/
+        gi->setEnabled(true);
+    }
 }
+
 
 #include <QDebug>
 void LZGraphicsView::view(const QString& title, const QList<LChart*>& list)
 {
-
+    Q_UNUSED(title);
     QMap<int, Item*> itemList;
     foreach(LChart* p, list)
     {
@@ -177,8 +149,6 @@ Item* LZGraphicsView::addItem(const LCType type)
     {
         connect(item, &Item::action, this, &LZGraphicsView::onAction);
         connect(item, &Item::remove, this, &LZGraphicsView::onRemove);
-        connect(item, &Item::testing, this, &LZGraphicsView::onTesting);
-        connect(item, &Item::testFinish, this, &LZGraphicsView::onTestFinish);
         connect(item, &Item::testing, m_worker, &DetectWorker::on_testing);
     }
     return item;
@@ -272,6 +242,40 @@ void LZGraphicsView::mouseReleaseEvent(QMouseEvent *event)
     QGraphicsView::mouseReleaseEvent(event);
 }
 
+void LZGraphicsView::wheelEvent(QWheelEvent *event)
+{
+    if (event->modifiers() & Qt::ControlModifier) {
+        if (event->angleDelta().y() > 0)
+            zoomIn();
+        else
+            zoomOut();
+        event->accept();
+    } else {
+        QGraphicsView::wheelEvent(event);
+    }
+}
+
+
+void LZGraphicsView::zoomIn()
+{
+    //scaleView(qreal(1.2));
+    emit sceneZoom(-1);
+}
+
+void LZGraphicsView::zoomOut()
+{
+    //scaleView(1 / qreal(1.2));
+    emit sceneZoom(1);
+}
+
+void LZGraphicsView::scaleView(qreal scaleFactor)
+{
+    qreal factor = transform().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width();
+    if (factor < 0.07 || factor > 100)
+        return;
+
+    scale(scaleFactor, scaleFactor);
+}
 
 
 void LZGraphicsView::onRemove()

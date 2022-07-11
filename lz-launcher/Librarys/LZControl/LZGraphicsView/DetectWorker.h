@@ -15,12 +15,14 @@ public:
 
     void stopTest();
     void setList(QList<Item*>& list);
-public:
+public slots:
     void on_detect_start();
+    void on_value_trigger(const int pid);
 private:
     void testing(Item *item);
 signals:
     void testFinished();
+    void valueTrigger(const int pid);
 private:
     QThread *m_thread = nullptr;
     QList<Item*> m_list;

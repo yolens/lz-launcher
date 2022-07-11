@@ -67,6 +67,7 @@ public:
     explicit Item(QObject *parent = nullptr, LCType type = LC_None);
     virtual ~Item();
 
+    void updateData();
     LCType getItemType();
     QString& getTypeName();
     void setChart(LChart* p);
@@ -76,14 +77,12 @@ public:
     LChart* getChart();
     LOrder* getOrder();
     QVector<LPoint*>& getPointList();
-    virtual Item::FunctionType setInputValue(const QString& id, const QVariant& value);
-    QVariant getInputValue(const QString& id);
 
     void initTest(); //初始化测试
     virtual bool startTest(); //开始检测
+    virtual const LPoint* startTest(const QVariant& value){Q_UNUSED(value); return nullptr;};
     virtual void testing(std::function<void(Item *p)> cb){Q_UNUSED(cb);};
-    virtual const LPoint* getNextPoint(const QVariant& value){Q_UNUSED(value); return nullptr;};
-
+    virtual Item::FunctionType witchFunction(){return FunctionType::Nromal_func;};
     virtual void mouseRightClick(const LPoint* p){Q_UNUSED(p);};
 
     Item::ActionType actionType();
@@ -91,6 +90,7 @@ public:
     void setCurrentPointId(const int id);
     void addLine(Item *item);
 
+    virtual void clear();
     virtual void setSource(Item *item){Q_UNUSED(item);};
     virtual void setDest(Item *item){Q_UNUSED(item);};
     virtual Item* getSource(){return nullptr;};
@@ -139,7 +139,6 @@ private:
     int m_testingTimes = 0;
     QTimer *m_testingTimer = nullptr;
     bool m_bDrawRect = false;
-    QMap<QString, QVariant> m_inputValueList;
     DragType m_dragType = DragType::Release;
     QPointF m_startPos;
 

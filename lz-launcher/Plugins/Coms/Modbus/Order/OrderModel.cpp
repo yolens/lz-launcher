@@ -18,21 +18,21 @@ void OrderModel::init()
     updateDevice();
 
     stringList.clear();
-    for (auto a : RWTypeM.toStdMap())
+    for (const auto& a : RWTypeM.toStdMap())
     {
         stringList.append(a.second);
     }
     addComboBoxDelegate(Type::rwType, stringList);
 
     stringList.clear();
-    for (auto a : ByteTypeM.toStdMap())
+    for (const auto& a : ByteTypeM.toStdMap())
     {
         stringList.append(a.second);
     }
     addComboBoxDelegate(Type::byteType, stringList);
 
     stringList.clear();
-    for (auto a : RegisterTypeM.toStdMap())
+    for (const auto& a : RegisterTypeM.toStdMap())
     {
         stringList.append(a.second);
     }
@@ -91,23 +91,10 @@ QVariant OrderModel::data(const QModelIndex &index, int role) const
             return order->mark();
             break;
         case Type::value:
-            if (LOrder::HEX == order->byteType())
-            {
-                return QString("0x%1").arg(QString::number(order->value().toULongLong(), 16));
-            }
-            else if (LOrder::Binary == order->byteType())
-            {
-                return QString::number(order->value().toULongLong(), 2);
-            }
-            else if (LOrder::Float == order->byteType())
-            {
-                long temp = order->value().toString().toLong();
-                return *(float*)&temp;
-            }
-            else
-            {
-                return order->value().toULongLong();
-            }
+            return order->value();
+            break;
+        case Type::byteType:
+            return ByteTypeM.value(order->byteType());
             break;
         case Type::deviceId:
             return m_deviceIdMap.value(order->deviceId());
@@ -118,9 +105,7 @@ QVariant OrderModel::data(const QModelIndex &index, int role) const
             return RWTypeM.value(order->rwType());
         }
             break;
-        case Type::byteType:
-            return ByteTypeM.value(order->byteType());
-            break;
+
         case Type::registerType:
             return RegisterTypeM.value((QModbusDataUnit::RegisterType)order->registerType());
             break;
@@ -158,32 +143,32 @@ bool OrderModel::setData(const QModelIndex &index, const QVariant &value, int ro
         case Type::mark:
             order->setMark(value.toString());
             break;
-        case Type::value:
-            if (LOrder::HEX == order->byteType())
+        case Type::value:  
+        {
+            QVariant u64 = LZLib::instance()->toLonglong(order->byteType(), value);
+            u64 = LZLib::instance()->fromLonglong(order->byteType(), u64);
+
+            order->setValue(u64);
+        }
+            break;
+        case Type::byteType:
+        {
+            QVariant u64 = LZLib::instance()->toLonglong(order->byteType(), order->value());
+
+            for (const auto& a : ByteTypeM.toStdMap())
             {
-                QString temp = value.toString();
-                temp = temp.replace("0x", "");
-                quint64 u64 = temp.toULongLong(nullptr, 16);
-                order->setValue(u64);
+                if (a.second == value.toString())
+                {
+                    u64 = LZLib::instance()->fromLonglong(a.first, u64);
+                    order->setByteType(a.first);
+                    order->setValue(u64);
+                    break;
+                }
             }
-            else if (LOrder::Binary == order->byteType())
-            {
-                quint64 u64 = value.toString().toULongLong(nullptr, 2);
-                order->setValue(u64);
-            }
-            else if (LOrder::Float == order->byteType())
-            {
-                float f = value.toFloat();
-                quint32 temp = *(quint32*)&f;
-                order->setValue(temp);
-            }
-            else
-            {
-                order->setValue(value.toULongLong());
-            }
+        }
             break;
         case Type::deviceId:
-            for (auto a : m_deviceIdMap.toStdMap())
+            for (const auto& a : m_deviceIdMap.toStdMap())
             {
                 if (a.second == value.toString())
                 {
@@ -194,7 +179,7 @@ bool OrderModel::setData(const QModelIndex &index, const QVariant &value, int ro
             break;
         case Type::rwType:
         {
-            for (auto a : RWTypeM.toStdMap())
+            for (const auto& a : RWTypeM.toStdMap())
             {
                 if (a.second == value.toString())
                 {
@@ -204,18 +189,9 @@ bool OrderModel::setData(const QModelIndex &index, const QVariant &value, int ro
             }
         }
             break;
-        case Type::byteType:
-            for (auto a : ByteTypeM.toStdMap())
-            {
-                if (a.second == value.toString())
-                {
-                    order->setByteType(a.first);
-                    break;
-                }
-            }
-            break;
+
         case Type::registerType:
-            for (auto a : RegisterTypeM.toStdMap())
+            for (const auto& a : RegisterTypeM.toStdMap())
             {
                 if (a.second == value.toString())
                 {

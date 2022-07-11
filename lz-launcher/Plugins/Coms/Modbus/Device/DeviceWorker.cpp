@@ -2,7 +2,7 @@
 #include <QModbusRtuSerialMaster>
 #include <QEventLoop>
 #include <QtDebug>
-
+#include "LZLib.h"
 #if _MSC_VER >= 1600
 #pragma execution_character_set("utf-8")
 #endif
@@ -40,7 +40,6 @@ void DeviceWorker::on_create_device()
     {
         emit message("已经创建过了!");
     }
-    qDebug() << "AAAAAAAAAAAAAAAAAA2";
     emit result(Result::CreateFinished);
 }
 
@@ -94,9 +93,13 @@ void DeviceWorker::on_action_data()
         if (nullptr != item)
         {
             if (item->rwType() == LOrder::Write)
+            {
                 write(item);
+            }
             else
+            {
                 read(item);
+            }
             if (item->valueCallback() != nullptr)
                 item->valueCallback()(item->value());
             delete item;
@@ -249,13 +252,15 @@ void DeviceWorker::read(LOrder* order)
                         {
                             const QString entry = tr("Address: %1, Value: %2").arg(unit.startAddress() + i)
                                                      .arg(QString::number(unit.value(i)));
-                            qDebug() << "KKK= " << entry;
+                            qDebug() << "KKK111= " << entry;
 
                             quint64 temp = unit.value(i);
                             u64 += temp << i*16;
                         }
-                        qDebug() << "KKK33= " <<u64;
-                        order->setValue(u64);
+
+                        order->setValue(LZLib::instance()->fromLonglong(order->byteType(), QVariant(u64)));
+
+                        qDebug() << "KKK33= " << u64 << order->value();
                     }
                     else
                     {
@@ -276,7 +281,8 @@ void DeviceWorker::read(LOrder* order)
                                  arg(reply->error(), -1, 16));
                 }
 
-                reply->deleteLater();
+                //reply->deleteLater();
+                delete reply;
                 emit readFinished();
             });
             loop.exec();
@@ -294,11 +300,12 @@ void DeviceWorker::read(LOrder* order)
 
 void DeviceWorker::write(LOrder* order)
 {
+    QVariant writeValue = LZLib::instance()->toLonglong(order->byteType(), order->value());
     QModbusDataUnit writeUnit = WriteReadRequest(order);
     QModbusDataUnit::RegisterType table = writeUnit.registerType();
     if (QModbusDataUnit::Coils == table)
     {
-        QString binary = QString::number(order->value().toULongLong(), 2);
+        QString binary = QString::number(writeValue.toULongLong(), 2);
         qDebug()<<"binary value= " << binary;
         for (int i = 0, total = int(writeUnit.valueCount()); i < total; ++i)
         {
@@ -308,7 +315,7 @@ void DeviceWorker::write(LOrder* order)
     }
     else
     {
-        quint64 u64 = order->value().toULongLong();
+        quint64 u64 = writeValue.toULongLong();
         for (int i = 0, total = int(writeUnit.valueCount()); i < total; ++i)
         {
             quint16 uv = u64 >> i*16;
@@ -335,7 +342,8 @@ void DeviceWorker::write(LOrder* order)
                         emit message(tr("Write response error: %1 (code: 0x%2)")
                                      .arg(reply->errorString()).arg(reply->error(), -1, 16));
                     }
-                    reply->deleteLater();
+                    //reply->deleteLater();
+                    delete reply;
                     emit writeFinished();
                 }
             );
@@ -344,7 +352,8 @@ void DeviceWorker::write(LOrder* order)
         else
         {
             // broadcast replies return immediately
-            reply->deleteLater();
+            //reply->deleteLater();
+            delete reply;
         }
     }
     else

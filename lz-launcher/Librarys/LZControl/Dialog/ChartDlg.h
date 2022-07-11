@@ -27,6 +27,8 @@ private:
 
     Item *m_item = nullptr;
     QVBoxLayout* m_mainLayout = nullptr;
+
+    QVector<std::function<void()>> m_valueSetList;
 };
 
 #endif // CHARTDLG_H

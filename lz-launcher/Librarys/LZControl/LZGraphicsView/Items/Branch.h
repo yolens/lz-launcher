@@ -10,12 +10,13 @@ public:
     explicit Branch(QObject *parent = nullptr);
 
     virtual bool startTest() override;
+    virtual const LPoint* startTest(const QVariant& value) override;
     virtual void createPoint() override;
-    virtual Item::FunctionType setInputValue(const QString& id, const QVariant& value) override;
-    virtual const LPoint* getNextPoint(const QVariant& value) override;
+    virtual Item::FunctionType witchFunction() override;
 private:
     virtual void mouseRightClick(const LPoint* p) override;
 protected:
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
     virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
     virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;

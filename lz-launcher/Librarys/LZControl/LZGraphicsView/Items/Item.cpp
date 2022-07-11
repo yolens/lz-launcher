@@ -27,6 +27,11 @@ Item::Item(QObject *parent, LCType type)
 
 Item::~Item()
 { 
+
+}
+
+void Item::clear()
+{
     if (nullptr == m_pChart)
         return;
     //移除所有的连线
@@ -43,6 +48,17 @@ Item::~Item()
     }
     //移除自己
     Plugin::DataCenterPlugin()->removeChart(m_pChart);
+}
+
+void Item::updateData()
+{
+    Plugin::DataCenterPlugin()->updateChart(m_pChart);
+    foreach (const auto& p, m_pointVec)
+    {
+        Plugin::DataCenterPlugin()->updatePoint(p);
+    }
+    updatePoint();
+    update();
 }
 
 LCType Item::getItemType()
@@ -111,23 +127,41 @@ bool Item::startTest()
     if (nullptr != m_pOrder)
     {
 
-
         QEventLoop loop;
         connect(this, &Item::finished, &loop, &QEventLoop::quit);
         LOrder *item = Plugin::DataCenterPlugin()->newOrder(m_pOrder);
+
+        QVariant sendValue;
+        foreach (const auto& p, m_pointVec)
+        {
+            if (p->type == LPType::value && p->attribute == LPAttribute::input)
+            {
+                sendValue = p->outValue;
+                break;
+            }
+        }
+        if (sendValue.isNull())
+        {
+            sendValue = m_pChart->m_value;
+        }
+
         std::function<void(const QVariant value)> valueCallback = [=](const QVariant value)
         {
-            m_inputValueList[item->valueId()] = value;
+            foreach (const auto& p, m_pointVec)
+            {
+                if (p->type == LPType::value && p->attribute == LPAttribute::output)
+                {
+                    p->outValue = value;
+                    p->outByteType = item->byteType();
+                    break;
+                }
+            }
             emit finished();
         };
 
 
         item->setValueCallback(valueCallback);
-        QVariant sendValue;
-        if (m_inputValueList.contains(item->valueId()))
-            sendValue = m_inputValueList.value(item->valueId());
-        else
-            sendValue = m_pChart->m_value;
+
         item->setValue(sendValue);
         Plugin::DataCenterPlugin()->execute(item);
         loop.exec();
@@ -170,17 +204,6 @@ QVector<LPoint*>& Item::getPointList()
     return m_pointVec;
 }
 
-Item::FunctionType Item::setInputValue(const QString& id, const QVariant& value)
-{
-    m_inputValueList[id] = value;
-    return FunctionType::Nromal_func;
-
-}
-
-QVariant Item::getInputValue(const QString& id)
-{
-    return m_inputValueList.value(id);
-}
 
 void Item::addLine(Item *item)
 {
@@ -386,7 +409,7 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                 painter->setBrush(Chart_Value_Output_Color);
 
 
-            painter->drawText(i->rect.x(), i->rect.y() + ((i->attribute == LPAttribute::input) ? 22 : -8), m_inputValueList.value(i->valueId).toString());
+            painter->drawText(i->rect.x(), i->rect.y() + ((i->attribute == LPAttribute::input) ? 22 : -8), i->outValue.toString());
         }
             break;
         default:
@@ -395,13 +418,13 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
         painter->setPen(Qt::NoPen);
         painter->drawEllipse(i->rect);
-        painter->setPen(QPen(Qt::white, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        painter->drawText(i->rect, Qt::AlignCenter, i->attribute == LPAttribute::input ? "i" : "o");
     }
 
-
+    painter->setPen(QPen(Qt::white, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     QRectF textRect = QRectF(0, 0, this->boundingRect().width(), 20);
     painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, m_typeName);
+
+
 }
 
 QVariant Item::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -487,27 +510,16 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
         {
             m_action = ActionType::ActionLine;
             m_currentPointId = lp->id;
+            qInfo() << "QQQQQQ= " << lp->count << lp->max;
             if (lp->max == 0 || lp->count < lp->max)
                 emit action(m_action);
             break;
         }
-        /*foreach(const auto& i, m_pointVec)
-        {
-            if (i->rect.contains(event->pos().toPoint()))
-            {
-                m_action = ActionType::ActionLine;
-                m_currentPointId = i->id;
-                if (i->max == 0 || i->count < i->max)
-                    emit action(m_action);
-                break;
-            }
-        }*/
 
     }
         break;
     case Qt::RightButton:
     {
-
         LPoint* p = getPointInPos(event->pos().toPoint());
         if (nullptr != p)
         {
@@ -515,16 +527,18 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
         }
         else
         {
+            /*QString tip = "删除";
+            if (m_type == LCType::LC_Line)
+                tip = "删除连线";
             QMenu menu;
-            QAction *deleteActon = new QAction("删除", &menu);
+            QAction *deleteActon = new QAction(tip, &menu);
             menu.addAction(deleteActon);
             connect(deleteActon, &QAction::triggered, this, [=]{
                 emit remove();
             });
-            menu.exec(QCursor::pos());
+            menu.exec(QCursor::pos());*/
+            emit remove();
         }
-
-
     }
         break;
     default:
@@ -535,10 +549,10 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
     update();
     QGraphicsItem::mousePressEvent(event);
 }
+
 void Item::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
-
-   // else
+    if (m_type != LCType::LC_Line)
     {
         QRectF left(this->boundingRect().left(), this->boundingRect().top(), DRAG_WIDTH, this->boundingRect().height());
         QRectF top(this->boundingRect().left(), this->boundingRect().top(), this->boundingRect().width(), DRAG_WIDTH);
@@ -573,9 +587,6 @@ void Item::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
         }
     }
 
-
-
-
     QGraphicsItem::hoverMoveEvent(event);
 }
 void Item::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
@@ -593,17 +604,6 @@ void Item::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 
 void Item::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-    /*if (nullptr == m_pChart || nullptr == m_pOrder)
-        return;
-    ChartDialog dlg;
-    ChartDialog::ChartInfo info;
-    info.value = m_pChart->m_value.isNull() ? m_pOrder->value() : m_pChart->m_value;
-    info.delay = m_pChart->m_delay;
-    dlg.setInfo(info);
-    dlg.exec();
-    m_pChart->m_value = dlg.info().value;
-    m_pChart->m_delay = dlg.info().delay;
-    updateChart();*/
     ChartDlg dlg;
     dlg.setItem(this);
     switch (m_type)

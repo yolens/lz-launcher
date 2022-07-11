@@ -12,7 +12,7 @@ public:
     virtual void createPoint() override;
 
 protected:
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
     virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;

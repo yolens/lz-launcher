@@ -159,112 +159,7 @@ const auto DELETE_SQL_LUnit = QLatin1String(R"(
     )").arg(Table_LUnit);
 
 
-//流程图点信息
-enum LPType {
-    circuit,  //流程线
-    value,    //值传递
-};
-enum LPAttribute {
-    input,
-    output
-};
-const QString Table_LPoint = "LPoint";
-class LZLIB_EXPORT LPoint : public LDB
-{
-public:
-    LPoint();
-    virtual ~LPoint();
 
-    static QList<LPoint*> get();
-
-    virtual bool updateDb() override;
-    virtual bool insertDb() override;
-    virtual bool removeDb() override;
-private:
-    bool bindValue(QSqlQuery& query);
-public:
-    QString         name;
-    LPType          type;
-    LPAttribute     attribute;
-    int             max = 1;
-    int             chartId = 0; //父亲容器
-    QString         valueId; //对应值的入口
-    QVariant        maxValue;
-    QVariant        minValue;
-
-    QRect           rect;
-    int             count = 0;
-};
-const auto CREATE_SQL_LPoint = QLatin1String(R"(
-    create table IF NOT EXISTS %1(
-          id integer primary key
-        , name varchar
-        , type integer
-        , attribute integer
-        , max integer
-        , chartId integer
-        , valueId varchar
-        , maxValue varchar
-        , minValue varchar
-    ))").arg(Table_LPoint);
-
-const QVector<QString> ALTER_LPoint_LIST = {
-    {"name varchar"},
-    {"type integer"},
-    {"attribute integer"},
-    {"max integer"},
-    {"chartId integer"},
-    {"valueId varchar"},
-    {"maxValue varchar"},
-    {"minValue varchar"},
-};
-const auto ALTER_SQL_LPoint = QLatin1String(R"(
-    alter table %1 add %2
-    )").arg(Table_LPoint).arg("%1");
-
-const auto UPDATE_SQL_LPoint = QLatin1String(R"(
-    update %1 set
-                      name=:name
-                    , type=:type
-                    , attribute=:attribute
-                    , max=:max
-                    , chartId=:chartId
-                    , valueId=:valueId
-                    , maxValue=:maxValue
-                    , minValue=:minValue
-    where id=:id
-    )").arg(Table_LPoint);
-
-const auto INSERT_SQL_LPoint = QLatin1String(R"(
-    insert into %1(
-                      name
-                    , type
-                    , attribute
-                    , max
-                    , chartId
-                    , valueId
-                    , maxValue
-                    , minValue
-                  )
-            values(
-                      :name
-                    , :type
-                    , :attribute
-                    , :max
-                    , :chartId
-                    , :valueId
-                    , :maxValue
-                    , :minValue
-                  )
-    )").arg(Table_LPoint);
-
-const auto SELECT_SQL_LPoint = QLatin1String(R"(
-    select * from %1
-    )").arg(Table_LPoint);
-
-const auto DELETE_SQL_LPoint = QLatin1String(R"(
-    delete from %1 where id=:id
-    )").arg(Table_LPoint);
 
 
 enum LCType {
@@ -520,5 +415,114 @@ private:
     QString         m_mark;
 
 };
+
+//流程图点信息
+enum LPType {
+    circuit,  //流程线
+    value,    //值传递
+};
+enum LPAttribute {
+    input,
+    output
+};
+const QString Table_LPoint = "LPoint";
+class LZLIB_EXPORT LPoint : public LDB
+{
+public:
+    LPoint();
+    virtual ~LPoint();
+
+    static QList<LPoint*> get();
+
+    virtual bool updateDb() override;
+    virtual bool insertDb() override;
+    virtual bool removeDb() override;
+private:
+    bool bindValue(QSqlQuery& query);
+public:
+    QString         name;
+    LPType          type;
+    LPAttribute     attribute;
+    int             max = 1;
+    int             chartId = 0; //父亲容器
+    QString         valueId; //对应值的入口
+    QVariant        maxValue = 0;
+    QVariant        minValue = 0;
+
+    QRect           rect;
+    int             count = 0;
+    QVariant        outValue;
+    LOrder::ByteType outByteType;
+};
+const auto CREATE_SQL_LPoint = QLatin1String(R"(
+    create table IF NOT EXISTS %1(
+          id integer primary key
+        , name varchar
+        , type integer
+        , attribute integer
+        , max integer
+        , chartId integer
+        , valueId varchar
+        , maxValue varchar
+        , minValue varchar
+    ))").arg(Table_LPoint);
+
+const QVector<QString> ALTER_LPoint_LIST = {
+    {"name varchar"},
+    {"type integer"},
+    {"attribute integer"},
+    {"max integer"},
+    {"chartId integer"},
+    {"valueId varchar"},
+    {"maxValue varchar"},
+    {"minValue varchar"},
+};
+const auto ALTER_SQL_LPoint = QLatin1String(R"(
+    alter table %1 add %2
+    )").arg(Table_LPoint).arg("%1");
+
+const auto UPDATE_SQL_LPoint = QLatin1String(R"(
+    update %1 set
+                      name=:name
+                    , type=:type
+                    , attribute=:attribute
+                    , max=:max
+                    , chartId=:chartId
+                    , valueId=:valueId
+                    , maxValue=:maxValue
+                    , minValue=:minValue
+    where id=:id
+    )").arg(Table_LPoint);
+
+const auto INSERT_SQL_LPoint = QLatin1String(R"(
+    insert into %1(
+                      name
+                    , type
+                    , attribute
+                    , max
+                    , chartId
+                    , valueId
+                    , maxValue
+                    , minValue
+                  )
+            values(
+                      :name
+                    , :type
+                    , :attribute
+                    , :max
+                    , :chartId
+                    , :valueId
+                    , :maxValue
+                    , :minValue
+                  )
+    )").arg(Table_LPoint);
+
+const auto SELECT_SQL_LPoint = QLatin1String(R"(
+    select * from %1
+    )").arg(Table_LPoint);
+
+const auto DELETE_SQL_LPoint = QLatin1String(R"(
+    delete from %1 where id=:id
+    )").arg(Table_LPoint);
 
 #endif // LDB_H

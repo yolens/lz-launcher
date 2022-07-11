@@ -13,14 +13,28 @@ Line::Line(QObject *parent)
 
 Line::~Line()
 {
+
+}
+
+void Line::clear()
+{
+    Item::clear();
     if (nullptr == m_pChart)
         return;
     LPoint *p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_sourcePointId);
     if (p)
+    {
         p->count--;
+        p->outValue.clear();
+        qInfo() << "YY1----------------------" << p->count;
+    }
     p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_destPointId);
     if (p)
+    {
         p->count--;
+        p->outValue.clear();
+        qInfo() << "YY2----------------------" << p->count;
+    }
     emit removeLine();
 }
 
@@ -36,6 +50,8 @@ void Line::setSource(Item *item)
     item->addLine(this);
     onAdjust();
     updateChart();
+
+
 }
 void Line::setDest(Item *item)
 {
@@ -49,6 +65,8 @@ void Line::setDest(Item *item)
     item->addLine(this);
     onAdjust();
     updateChart();
+
+
 }
 
 Item* Line::getSource()
@@ -63,7 +81,6 @@ Item* Line::getDest()
 void Line::onAdjust()
 {
     adjustLine();
-    update();
 }
 
 void Line::adjustLine()
@@ -77,6 +94,7 @@ void Line::adjustLine()
     prepareGeometryChange();
 
     if (length > qreal(20.)) {
+
         QRect rect;
         LPoint *p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_sourcePointId);
         if (nullptr != p)
@@ -91,22 +109,25 @@ void Line::adjustLine()
         else
             rect = QRect(0,0,0,0);
         m_destPoint = line.p2() + QPointF(rect.left()+rect.width()/2, rect.top()+rect.height()/2);
+
     } else {
         m_sourcePoint = m_destPoint = line.p1();
     }
 
+    setPolygon();
+    update();
 }
 
 QPainterPath Line::shape() const
 {
     QPainterPath path;
-    path.addPolygon(m_arrowHead);
+    path.addPolygon(m_drawPolygon);
     return path;
 }
 
 QRectF Line::boundingRect() const
 {
-   /* if (!m_pSource || !m_pDest)
+    /*if (!m_pSource || !m_pDest)
         return QRectF();
 
     qreal penWidth = 1;
@@ -117,7 +138,7 @@ QRectF Line::boundingRect() const
         .normalized()
         .adjusted(-extra, -extra, extra, extra);*/
     QPainterPath path;
-    path.addPolygon(m_arrowHead);
+    path.addPolygon(m_drawPolygon);
     return path.boundingRect();
 }
 
@@ -128,15 +149,30 @@ bool Line::startTest()
     return true;
 }
 
+void Line::setPolygon()
+{
+    QLineF line(m_sourcePoint, m_destPoint);
+    double angle = std::atan2(-line.dy(), line.dx());
+
+    QPointF destArrowP1 = m_destPoint + QPointF(sin(angle - M_PI / 3) * 6,
+                                              cos(angle - M_PI / 3) * 6);
+    QPointF destArrowP2 = m_destPoint + QPointF(sin(angle - M_PI + M_PI / 3) * 6,
+                                              cos(angle - M_PI + M_PI / 3) * 6);
+
+    QPolygonF py;
+    py << line.p1() << line.p2() << destArrowP1 << destArrowP2 << line.p2();
+    m_drawPolygon = py;
+}
+
 void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
-   // painter->fillRect(this->boundingRect(), QColor(255,0,0));
+    //painter->fillRect(this->boundingRect(), QColor(255,0,0));
 
-    QLineF line(m_sourcePoint, m_destPoint);
-    if (qFuzzyCompare(line.length(), qreal(0.)))
-        return;
+    //QLineF line(m_sourcePoint, m_destPoint);
+    //if (qFuzzyCompare(line.length(), qreal(0.)))
+    //    return;
 
     QColor bgColor = Qt::white;
     switch (m_testState)
@@ -162,20 +198,20 @@ void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 
     // Draw the arrows
-    double angle = std::atan2(-line.dy(), line.dx());
+    /*double angle = std::atan2(-line.dy(), line.dx());
 
     QPointF destArrowP1 = m_destPoint + QPointF(sin(angle - M_PI / 3) * 6,
                                               cos(angle - M_PI / 3) * 6);
     QPointF destArrowP2 = m_destPoint + QPointF(sin(angle - M_PI + M_PI / 3) * 6,
-                                              cos(angle - M_PI + M_PI / 3) * 6);
+                                              cos(angle - M_PI + M_PI / 3) * 6);*/
 
     painter->setBrush(bgColor);
 
-    m_arrowHead.clear();
-    m_arrowHead << line.p2() << destArrowP1 << destArrowP2;
-    painter->drawLine(line);
-    painter->drawPolygon(m_arrowHead);
-    m_arrowHead << line.p1();
+    //m_arrowHead.clear();
+    //m_arrowHead << line.p1() << line.p2() << destArrowP1 << destArrowP2 << line.p2();
+   // painter->drawLine(line);
+    painter->drawPolyline(m_drawPolygon);
+   // m_arrowHead << line.p1();
 }
 /*
 void Line::mousePressEvent(QGraphicsSceneMouseEvent *event)

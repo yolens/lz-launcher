@@ -11,12 +11,14 @@ public:
 
     void setItem(Item* item);
     void registerCB(std::function<void(Item *p)> cb);
+    bool isRunning();
 public slots:
     void on_testing();
 private:
     QThread *m_thread = nullptr;
     std::function<void(Item *p)> m_cb = nullptr;
     Item *m_item = nullptr;
+    bool m_isRunning = false;
 };
 
 class Thread : public Item

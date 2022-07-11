@@ -10,6 +10,7 @@ public:
     explicit Line(QObject *parent = nullptr);
     virtual ~Line();
 
+    virtual void clear() override;
     virtual void setSource(Item *item) override;
     virtual void setDest(Item *item) override;
     virtual Item* getSource() override;
@@ -17,8 +18,9 @@ public:
     virtual bool startTest() override;
 private:
     void adjustLine();
+    void setPolygon();
 public:
-    QRectF boundingRect() const override;
+    virtual QRectF boundingRect() const override;
 protected:
     virtual QPainterPath shape() const override;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
@@ -33,7 +35,7 @@ private:
     QPointF m_sourcePoint;
     QPointF m_destPoint;
 
-    QPolygonF m_arrowHead;
+    QPolygonF m_drawPolygon;
 };
 
 #endif // LINE_H

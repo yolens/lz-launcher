@@ -122,8 +122,11 @@ void LZGraphicsView::view(LUnit* pUnit)
         {
             if (lc->m_type == LC_Line)
             {
-                Item* dest = (Item*)itemList.value(Plugin::DataCenterPlugin()->getPoint(lc->m_destPointId)->chartId);
-                Item* source = (Item*)itemList.value(Plugin::DataCenterPlugin()->getPoint(lc->m_sourcePointId)->chartId);
+                LPoint *destP = Plugin::DataCenterPlugin()->getPoint(lc->m_destPointId); if (nullptr == destP) continue;
+                LPoint *sourceP = Plugin::DataCenterPlugin()->getPoint(lc->m_sourcePointId); if (nullptr == sourceP) continue;
+                Item* dest = (Item*)itemList.value(destP->chartId); if (nullptr == dest) continue;
+                Item* source = (Item*)itemList.value(sourceP->chartId); if (nullptr == source) continue;
+
                 Item* line = p;
                 source->setCurrentPointId(lc->m_sourcePointId);
                 dest->setCurrentPointId(lc->m_destPointId);
@@ -134,6 +137,7 @@ void LZGraphicsView::view(LUnit* pUnit)
             }
         }
     }
+
 }
 
 Item* LZGraphicsView::addItem(LChart* p)
@@ -147,6 +151,7 @@ Item* LZGraphicsView::addItem(LChart* p)
         item->setChart(p);
         item->initData();
         item->updatePoint();
+
     }
     return item;
 }
@@ -197,16 +202,19 @@ Item* LZGraphicsView::addItem(const LCType type, const QPoint& pt)
             LChart *pChart = new LChart(type);
             pChart->m_unitId = m_pUnit->id;
 
+
             item->setChart(pChart);
-            Plugin::DataCenterPlugin()->insertChart(pChart);
-            item->initData();
-            item->createPoint();
-            item->updatePoint();
 
             QUndoCommand *addCommand = new AddCommand(item, m_pScene);
             m_undoStack->push(addCommand);
 
             item->setPos(QPointF(pt));
+            pChart->m_pos = item->pos().toPoint();
+            Plugin::DataCenterPlugin()->insertChart(pChart);
+            item->initData();
+            item->createPoint();
+            item->updatePoint();
+
         }
     }
 
@@ -219,7 +227,8 @@ void LZGraphicsView::mouseMoveEvent(QMouseEvent *event)
     if (nullptr != m_pVirtual)
     {
         QPointF ptf = this->mapToScene(event->pos());
-        m_pVirtual->setPos(ptf.x(), ptf.y());
+        m_pVirtual->setPos(ptf);
+        m_pLine->show();
     }
     QGraphicsView::mouseMoveEvent(event);
 }
@@ -228,12 +237,14 @@ void LZGraphicsView::cancelEditing()
 {
     if (nullptr != m_pVirtual)
     {
+        m_pVirtual->clear();
         m_pVirtual->deleteLater();
         m_pVirtual = nullptr;
     }
     if (nullptr != m_pLine)
     {
         m_pScene->removeItem(m_pLine);
+        m_pLine->clear();
         m_pLine->deleteLater();
         m_pLine = nullptr;
     }
@@ -321,8 +332,18 @@ void LZGraphicsView::onRemove()
     if (nullptr == item)
         return;
 
-    m_pScene->removeItem(item);
-    item->deleteLater();
+    QString tip = "删除";
+    if (item->getItemType() == LCType::LC_Line)
+        tip = "删除连线";
+    QMenu menu;
+    QAction *deleteActon = new QAction(tip, &menu);
+    menu.addAction(deleteActon);
+    connect(deleteActon, &QAction::triggered, this, [=]{
+        m_pScene->removeItem(item);
+        item->clear();
+        item->deleteLater();
+    });
+    menu.exec(QCursor::pos());
 
 
 }
@@ -345,7 +366,7 @@ void LZGraphicsView::onAction(const Item::ActionType type)
         {
             if (Plugin::DataCenterPlugin()->getPoint(source->getCurrentPointId())->attribute == LPAttribute::output)
             {
-                Item *dest = addItem(LCType::LC_Virtual, QPoint(source->pos().toPoint().x(), source->pos().toPoint().y()));
+                Item *dest = addItem(LCType::LC_Virtual, source->pos().toPoint());
                 Item *line = addItem(LCType::LC_Line, source->pos().toPoint());
                 line->setSource(source);
                 line->setDest(dest);
@@ -354,6 +375,7 @@ void LZGraphicsView::onAction(const Item::ActionType type)
                 m_pSource = source;
                 m_pVirtual = dest;
                 m_pLine = line;
+                m_pLine->hide();
             }
         }
         else if (m_pSource == source)
@@ -372,6 +394,7 @@ void LZGraphicsView::onAction(const Item::ActionType type)
                     m_pLine->setDest(dest);
                     connect(dest, &Item::adjust, (Line*)m_pLine, &Line::onAdjust);
 
+                    m_pVirtual->clear();
                     m_pVirtual->deleteLater();
                     m_pVirtual = nullptr;
                     m_pSource = nullptr;

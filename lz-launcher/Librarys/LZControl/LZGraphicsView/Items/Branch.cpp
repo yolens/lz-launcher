@@ -7,23 +7,40 @@ Branch::Branch(QObject *parent)
     m_typeName = "Branch";
     this->setAcceptDrops(true);
 }
-
+#include <QTimer>
 bool Branch::startTest()
 {
+    m_testState = TestState::Testing;
+
+    QTimer::singleShot(0, this, [=]{
+        update();
+    });
     return true;
 }
-
-Item::FunctionType Branch::setInputValue(const QString& id, const QVariant& value)
+#include <QDebug>
+Item::FunctionType Branch::witchFunction()
 {
-    m_inputValueList[id] = value;
     return FunctionType::ValueTrigger_func;
 }
 
-const LPoint* Branch::getNextPoint(const QVariant& value)
+const LPoint* Branch::startTest(const QVariant& value)
 {
-    LPoint *p = nullptr;
+    m_testState = TestState::Testing;
 
-    return p;
+    QTimer::singleShot(0, this, [=]{
+        update();
+    });
+    foreach(const auto& p, m_pointVec)
+    {
+        if (p->type == LPType::circuit && p->attribute == LPAttribute::output)
+        {
+            qInfo() << "DDDD= " << p->minValue << value << p->maxValue;
+            qInfo() << "DDDD2= " << p->minValue.toLongLong() << value.toLongLong() << p->maxValue.toLongLong();
+            if (p->minValue.toLongLong() <= value.toLongLong() && p->maxValue.toLongLong() >= value.toLongLong())
+                return p;
+        }
+    }
+    return nullptr;
 }
 
 void Branch::createPoint()
@@ -33,17 +50,22 @@ void Branch::createPoint()
     p->attribute = LPAttribute::input;
     p->chartId = m_pChart->id;
     insertPoint(p);
-    p = new LPoint();
-    p->type = LPType::circuit;
-    p->attribute = LPAttribute::output;
-    p->chartId = m_pChart->id;
-    insertPoint(p);
 
     p = new LPoint();
     p->type = LPType::circuit;
     p->attribute = LPAttribute::output;
     p->chartId = m_pChart->id;
     insertPoint(p);
+    p->name = QString("O%1").arg(p->id);
+    Plugin::DataCenterPlugin()->updatePoint(p);
+
+    p = new LPoint();
+    p->type = LPType::circuit;
+    p->attribute = LPAttribute::output;
+    p->chartId = m_pChart->id;
+    insertPoint(p);
+    p->name = QString("O%1").arg(p->id);
+    Plugin::DataCenterPlugin()->updatePoint(p);
 }
 #include <QMenu>
 void Branch::mouseRightClick(const LPoint* p)
@@ -113,4 +135,20 @@ void Branch::dropEvent(QGraphicsSceneDragDropEvent *event)
         }
     }
     QGraphicsItem::dropEvent(event);
+}
+#include <QPainter>
+void Branch::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Item::paint(painter, option, widget);
+
+    foreach(const auto& i, m_pointVec)
+    {
+        if (i->type == LPType::circuit && i->attribute == LPAttribute::output)
+        {
+            painter->setPen(QPen(Qt::white, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            QRect pointRect(i->rect.x()-20, i->rect.top(), 20, i->rect.bottom());
+            painter->drawText(pointRect, Qt::AlignHCenter | Qt::AlignRight, QString("P%1").arg(m_pointVec.indexOf(i)));
+        }
+    }
+
 }

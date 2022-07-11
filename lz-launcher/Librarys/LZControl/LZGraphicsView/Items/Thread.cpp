@@ -12,16 +12,29 @@ void ThreadWorker::setItem(Item* item)
 {
     m_item = item;
 }
-
+#include <QDebug>
 void ThreadWorker::registerCB(std::function<void(Item *p)> cb)
 {
     m_cb = cb;
 }
 
+bool ThreadWorker::isRunning()
+{
+    return m_isRunning;
+}
+
 void ThreadWorker::on_testing()
 {
+    if (m_isRunning)
+        return;
     if (nullptr != m_cb)
+    {
+        m_isRunning = true;
+        qInfo() << "MMMMMMMMMMMMMMM222";
         m_cb(m_item);
+        qInfo() << "MMMMMMMMMMMMMMM111";
+        m_isRunning = false;
+    }
 }
 
 Thread::Thread(QObject *parent)
@@ -49,8 +62,6 @@ bool Thread::startTest()
     });
 
 
-
-m_pChart->m_delay = 1000;
     int times = 0;
     while (true)
     {
@@ -77,7 +88,8 @@ m_pChart->m_delay = 1000;
         connect(this, &Thread::sig_testing, m_worker, &ThreadWorker::on_testing);
         return false;
     }
-
+    if (!m_worker->isRunning())
+        return false;
     return true;
 }
 

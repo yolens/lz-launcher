@@ -28,7 +28,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 {
     Item::paint(painter, option, widget);
     painter->setPen(QPen(Qt::black));
-    if (nullptr != m_pOrder)
+    if (nullptr != m_pChart)
     {
         int edge = POINT_SIZE + POINT_EDGE + 3;
         QRectF textRect = this->boundingRect().adjusted(edge, edge+10, -edge, -edge-10);
@@ -94,6 +94,8 @@ void Node::dropEvent(QGraphicsSceneDragDropEvent *event)
             m_pChart->m_name = com->name();
             m_pChart->m_orderId = com->id;
             m_pChart->m_orderType = com->type();
+            if (m_pChart->m_value.isNull())
+                m_pChart->m_value = com->value();
 
             LPoint *p = new LPoint();
             p->type = LPType::value;

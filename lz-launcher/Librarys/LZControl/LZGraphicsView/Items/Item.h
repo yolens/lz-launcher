@@ -4,6 +4,7 @@
 #include <QGraphicsItem>
 #include <QMetaEnum>
 #include "LDB.h"
+#include "Dialog/ChartDlg.h"
 #if _MSC_VER >= 1600
 #pragma execution_character_set("utf-8")
 #endif
@@ -17,10 +18,13 @@ class Item : public QObject, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
+    friend class Virtual;
     friend class Node;
     friend class Start;
     friend class Finish;
     friend class Line;
+    friend class Thread;
+    friend class Branch;
 public:
     enum ActionType {
         ActionNormal,
@@ -43,7 +47,7 @@ public:
     enum DragType
     {
         //没有进行拖拽
-        Release,
+        Release = 0,
 
         //五个点的定义
         Left,
@@ -52,10 +56,19 @@ public:
         Bottom,
         Center,
     };
+
+    enum FunctionType
+    {
+        Nromal_func = 0,
+        ValueTrigger_func,
+    };
+
 public:
     explicit Item(QObject *parent = nullptr, LCType type = LC_None);
     virtual ~Item();
 
+    LCType getItemType();
+    QString& getTypeName();
     void setChart(LChart* p);
     void initData();
     void updateChart();
@@ -63,11 +76,15 @@ public:
     LChart* getChart();
     LOrder* getOrder();
     QVector<LPoint*>& getPointList();
-    void setInputValue(const QString& id, const QVariant& value);
+    virtual Item::FunctionType setInputValue(const QString& id, const QVariant& value);
     QVariant getInputValue(const QString& id);
 
     void initTest(); //初始化测试
-    virtual void startTest(); //开始检测
+    virtual bool startTest(); //开始检测
+    virtual void testing(std::function<void(Item *p)> cb){Q_UNUSED(cb);};
+    virtual const LPoint* getNextPoint(const QVariant& value){Q_UNUSED(value); return nullptr;};
+
+    virtual void mouseRightClick(const LPoint* p){Q_UNUSED(p);};
 
     Item::ActionType actionType();
     int getCurrentPointId();
@@ -81,7 +98,8 @@ public:
     virtual void createPoint(){};
     virtual void updatePoint();
 private:
-
+    void setSize(const QSizeF& size);
+    LPoint* getPointInPos(const QPoint& pt);
 public:
     virtual QRectF boundingRect() const override;
 protected:
@@ -103,12 +121,12 @@ signals:
     void remove();
     void adjust();
     void removeLine();
-    void testing();
     void testFinish();
 private:
-
+    QString m_typeName; //类型名称
     MouseState m_mouseState = MouseState::Leave;
     ActionType m_action = ActionType::ActionNormal;
+    LCType m_type;
 
     int m_currentPointId = 0;
     QVector<LPoint*> m_pointVec;
@@ -124,6 +142,7 @@ private:
     QMap<QString, QVariant> m_inputValueList;
     DragType m_dragType = DragType::Release;
     QPointF m_startPos;
+
 };
 
 #endif // ITEM_H

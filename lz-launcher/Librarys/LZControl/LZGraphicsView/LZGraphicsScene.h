@@ -1,4 +1,4 @@
-#ifndef LZGRAPHICSSCENE_H
+﻿#ifndef LZGRAPHICSSCENE_H
 #define LZGRAPHICSSCENE_H
 
 #include <QGraphicsScene>
@@ -15,7 +15,7 @@ protected:
     virtual void dropEvent(QGraphicsSceneDragDropEvent *event) override;
 
 signals:
-
+    void sig_addItem(const int value);
 private:
 
 };

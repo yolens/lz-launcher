@@ -14,7 +14,7 @@ QWidget *ComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     Q_UNUSED(index)
     QComboBox *comboBox = new QComboBox(parent);
     comboBox->addItems(m_list);
-    foreach (auto a, m_disenableList)
+    foreach (const auto& a, m_disenableList)
     {
         comboBox->setItemData(comboBox->findText(a), false, Qt::UserRole-1);
     }

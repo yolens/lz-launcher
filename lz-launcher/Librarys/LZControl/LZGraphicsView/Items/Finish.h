@@ -1,4 +1,4 @@
-#ifndef FINISH_H
+﻿#ifndef FINISH_H
 #define FINISH_H
 
 #include "Start.h"
@@ -9,7 +9,7 @@ class Finish : public Item
 public:
     explicit Finish(QObject *parent = nullptr);
 
-    virtual void startTest() override;
+    virtual bool startTest() override;
 public:
     virtual void createPoint() override;
     virtual void updatePoint() override;

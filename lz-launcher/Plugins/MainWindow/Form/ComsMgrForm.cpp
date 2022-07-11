@@ -39,7 +39,7 @@ void ComsMgrForm::init()
     }
 
     std::function<void()> callback = [=](){
-        foreach(int type, m_buttonList.keys())
+        foreach(const auto& type, m_buttonList.keys())
         {
             QString mes;
             QMap<LDevice::DeviceState, int> stateList = Plugin::DataCenterPlugin()->deviceStateListByType(type);

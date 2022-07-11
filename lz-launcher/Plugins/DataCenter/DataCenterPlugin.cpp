@@ -45,19 +45,27 @@ bool DataCenterPlugin::initSettings()
 }
 bool DataCenterPlugin::startPlugin()
 {
-    QList<LPoint*> pointList = LPoint::get();
-    foreach (LPoint* p, pointList)
+    foreach (LProduct* p, LProduct::get())
+    {
+        m_productList.insert(p->id, p);
+    }
+
+    foreach (LUnit* p, LUnit::get())
+    {
+        m_unitList.insert(p->id, p);
+    }
+
+    foreach (LPoint* p, LPoint::get())
     {
         m_pointList.insert(p->id, p);
     }
 
-    QList<LChart*> chartList = LChart::get();
-    foreach (LChart* p, chartList)
+    foreach (LChart* p, LChart::get())
     {
         m_chartList.insert(p->id, p);
     }
-    QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
-    foreach (IPlugin *plugin, list)
+
+    foreach (IPlugin *plugin, Plugin::Manager()->getPluginsByType(IPlugin::Coms))
     {
         IOrder* order = qobject_cast<IOrder*>(plugin->instance());
         if (nullptr != order)
@@ -69,24 +77,135 @@ bool DataCenterPlugin::startPlugin()
 }
 bool DataCenterPlugin::stopPlugin()
 {
-    foreach(LPoint* p, m_pointList.values())
+    foreach(const auto& p, m_pointList.values())
     {
         delete p;
     }
-    foreach(LChart* p, m_chartList.values())
+    foreach(const auto& p, m_chartList.values())
     {
         delete p;
     }
     return true;
 }
 
+LProduct* DataCenterPlugin::getProduct(const int id)
+{
+    return m_productList.value(id);
+}
+
+QList<LProduct*> DataCenterPlugin::getProductList()
+{
+    QList<LProduct*> list;
+    foreach(const auto& p, m_productList.values())
+    {
+        list.push_back(p);
+    }
+    return list;
+}
+
+bool DataCenterPlugin::insertProduct(LProduct* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->insertDb())
+    {
+        m_productList.insert(p->id, p);
+        return true;
+    }
+    return false;
+}
+
+bool DataCenterPlugin::updateProduct(LProduct* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->updateDb())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool DataCenterPlugin::removeProduct(LProduct* p)
+{
+    if (nullptr == p)
+        return false;
+    //1、先删除产品下的子单元
+    foreach(const auto& u, getUnitList(p->id))
+    {
+        removeUnit(u);
+    }
+    //2、删除产品本身
+    if (p->removeDb())
+    {
+        m_chartList.remove(p->id);
+        return true;
+    }
+    return false;
+}
+
+QList<LUnit*> DataCenterPlugin::getUnitList(const int id)
+{
+    QList<LUnit*> list;
+    foreach(const auto& p, m_unitList)
+    {
+        if (id == p->productId)
+            list.push_back(p);
+    }
+    return list;
+}
+
+bool DataCenterPlugin::insertUnit(LUnit* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->insertDb())
+    {
+        m_unitList.insert(p->id, p);
+        return true;
+    }
+    return false;
+}
+
+LUnit* DataCenterPlugin::getUnit(const int id)
+{
+    return m_unitList.value(id);
+}
+
+bool DataCenterPlugin::hasUnit(const int id)
+{
+    return m_unitList.contains(id);
+}
+
+bool DataCenterPlugin::updateUnit(LUnit* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->updateDb())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool DataCenterPlugin::removeUnit(LUnit* p)
+{
+    if (nullptr == p)
+        return false;
+    if (p->removeDb())
+    {
+        m_unitList.remove(p->id);
+        return true;
+    }
+    return false;
+}
+
 QList<LChart*> DataCenterPlugin::getChartList(const int id)
 {
-    Q_UNUSED(id);
     QList<LChart*> list;
-    foreach(LChart* p, m_chartList)
+    foreach(const auto& p, m_chartList)
     {
-        //if (id == p->id)
+        if (id == p->m_unitId)
             list.push_back(p);
 
     }
@@ -96,7 +215,7 @@ QList<LChart*> DataCenterPlugin::getChartList(const int id)
 QList<LPoint*> DataCenterPlugin::getPointList(const int chartId)
 {
     QList<LPoint*> list;
-    foreach(LPoint* p, m_pointList)
+    foreach(const auto& p, m_pointList)
     {
         if (chartId == p->chartId)
             list.push_back(p);

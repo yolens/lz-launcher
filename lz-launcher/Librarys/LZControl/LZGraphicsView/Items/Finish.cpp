@@ -3,7 +3,7 @@
 Finish::Finish(QObject *parent)
     : Item{parent, LCType::LC_Finish}
 {
-    //m_type = LCType::LC_Finish;
+    m_typeName = "Finish";
 }
 
 void Finish::createPoint()
@@ -18,7 +18,7 @@ void Finish::createPoint()
 void Finish::updatePoint()
 {
     QVector<LPoint*> mv;
-    foreach (auto i, m_pointVec)
+    foreach (const auto& i, m_pointVec)
     {
         if (i->type == LPType::circuit)
             mv.append(i);
@@ -31,10 +31,12 @@ void Finish::updatePoint()
         mv.at(0)->rect = QRect(QPoint(x-POINT_BIG_SIZE/2,y-POINT_BIG_SIZE/2), QSize(POINT_BIG_SIZE,POINT_BIG_SIZE));
     }
 }
-
-void Finish::startTest()
+#include <QTimer>
+bool Finish::startTest()
 {
     m_testState = TestState::Testing;
-    update();
-    emit testing();
+    QTimer::singleShot(0, this, [=]{
+        update();
+    });
+    return true;
 }

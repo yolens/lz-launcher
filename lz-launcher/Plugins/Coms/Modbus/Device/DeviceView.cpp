@@ -25,7 +25,7 @@ DeviceView::DeviceView(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
+    ui->srollArea_device->setItemWidth(300);
     QList<LDevice*> *list = ModbusData::instance()->deviceList();
     if (nullptr != list)
     {
@@ -69,7 +69,7 @@ void DeviceView::initCom(DeviceCom *com, const bool autoConnect)
 {
     connect(com, &DeviceCom::updateView, this, &DeviceView::on_updateView);
     connect(com, &DeviceCom::changeDeviceName, this, &DeviceView::changeDeviceName);
-    com->setParent(ui->scrollAreaWidgetContents);
+    //com->setParent(ui->scrollAreaWidgetContents);
     com->init();
     if (autoConnect)
         com->connectDevice();
@@ -81,7 +81,14 @@ void DeviceView::adjustView()
     if (nullptr == list)
         return;
 
-    int number = qMax(1, ui->scrollAreaWidgetContents->width()/ITEM_WIDTH);
+    QList<QWidget*> wList;
+    foreach (const auto& b, *list)
+    {
+        wList.append(dynamic_cast<DeviceCom*>(b));
+    }
+    ui->srollArea_device->view(wList);
+
+    /*int number = qMax(1, ui->scrollAreaWidgetContents->width()/ITEM_WIDTH);
     int edge = 10;
     int spacing = 20;
     int x = 0;
@@ -112,12 +119,12 @@ void DeviceView::adjustView()
     }
 
     y += h+spacing;
-    ui->scrollAreaWidgetContents->setFixedHeight(y);
+    ui->scrollAreaWidgetContents->setFixedHeight(y);*/
 }
 
 void DeviceView::on_pushButton_add_clicked()
 {
-    DeviceCom *com = new DeviceCom(ui->scrollAreaWidgetContents);
+    DeviceCom *com = new DeviceCom();
     ModbusData::instance()->insert(com);
 
     initCom(com);

@@ -1,4 +1,4 @@
-#ifndef START_H
+﻿#ifndef START_H
 #define START_H
 
 #include "Item.h"
@@ -9,7 +9,7 @@ class Start : public Item
 public:
     explicit Start(QObject *parent = nullptr);
 
-    virtual void startTest() override;
+    virtual bool startTest() override;
 public:
     virtual void createPoint() override;
     virtual void updatePoint() override;

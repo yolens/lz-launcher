@@ -3,6 +3,16 @@
 
 #include "LZLib_global.h"
 #include "LDB.h"
+#include <QColor>
+
+const QColor Chart_Circuit_Input_Color = QColor(0,0,0);
+const QColor Chart_Circuit_Output_Color = QColor(255,0,0);
+const QColor Chart_Value_Input_Color = QColor(0,0,255);
+const QColor Chart_Value_Output_Color = QColor(0,255,0);
+
+const QString Mime_Node_Scene = "Node/Scene";
+const QString Mime_Node_Chart = "Node/Chart";
+const QString Mime_Node_Point = "Node/Point";
 
 class LZLIB_EXPORT LZLib
 {

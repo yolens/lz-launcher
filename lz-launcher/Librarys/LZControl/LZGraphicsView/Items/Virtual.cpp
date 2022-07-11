@@ -4,7 +4,7 @@
 Virtual::Virtual(QObject *parent)
     : Item(parent, LCType::LC_Virtual)
 {
-    //m_type = LCType::LC_Virtual;
+    m_typeName = "Virtual";
 }
 
 QRectF Virtual::boundingRect() const

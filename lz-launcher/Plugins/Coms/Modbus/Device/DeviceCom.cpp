@@ -30,19 +30,19 @@ DeviceCom::DeviceCom(QWidget *parent) :
     changeDeviceState(LDevice::DeviceState::disenabled);
     ui->textEdit_mark->setFixedHeight(60);
     this->setType(LOrder::Modbus);
-    foreach (auto i, ParityL)
+    foreach (const auto& i, ParityL)
     {
         ui->comboBox_parity->addItem(i);
     }
-    foreach (auto i, BaudRateL)
+    foreach (const auto& i, BaudRateL)
     {
         ui->comboBox_baud->addItem(i);
     }
-    foreach (auto i, DataBitsL)
+    foreach (const auto& i, DataBitsL)
     {
         ui->comboBox_data->addItem(i);
     }
-    foreach (auto i, StopBitsL)
+    foreach (const auto& i, StopBitsL)
     {
         ui->comboBox_stop->addItem(i);
     }

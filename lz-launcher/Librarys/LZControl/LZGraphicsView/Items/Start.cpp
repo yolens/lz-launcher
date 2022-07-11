@@ -4,7 +4,7 @@
 Start::Start(QObject *parent)
     : Item{parent, LCType::LC_Start}
 {
-    //m_type = LCType::LC_Start;
+    m_typeName = "Start";
     m_rect = QRectF(0, 0, 60, 60);
 }
 
@@ -20,7 +20,7 @@ void Start::createPoint()
 void Start::updatePoint()
 {
     QVector<LPoint*> mv;
-    foreach (auto i, m_pointVec)
+    foreach (const auto& i, m_pointVec)
     {
         if (i->type == LPType::circuit)
             mv.append(i);
@@ -35,11 +35,12 @@ void Start::updatePoint()
 }
 
 #include <QTimer>
-void Start::startTest()
+bool Start::startTest()
 {
     m_testState = TestState::Testing;
-    update();
-
-    emit testing();
+    QTimer::singleShot(0, this, [=]{
+        update();
+    });
+    return true;
 
 }

@@ -6,7 +6,7 @@
 Line::Line(QObject *parent)
     : Item(parent, LCType::LC_Line)
 {
-    //m_type = LCType::LC_Line;
+    m_typeName = "Line";
     setFlag(ItemIsMovable, false);
     setFlag(QGraphicsItem::ItemIsSelectable, false);
 }
@@ -121,10 +121,11 @@ QRectF Line::boundingRect() const
     return path.boundingRect();
 }
 
-void Line::startTest()
+bool Line::startTest()
 {
     m_testState = TestState::Testing;
-    update();
+    //update();
+    return true;
 }
 
 void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

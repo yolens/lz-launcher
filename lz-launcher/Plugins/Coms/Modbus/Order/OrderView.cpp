@@ -50,6 +50,10 @@ OrderView::OrderView(QWidget *parent) :
     {
         cb->installEventFilter(this);
     }
+
+    connect(ui->pushButton_add, &QPushButton::clicked, this, [=]{
+       addItem();
+    });
 }
 
 OrderView::~OrderView()

@@ -8,6 +8,19 @@
 class IDataCenter
 {
 public:
+    virtual LProduct* getProduct(const int id) = 0;
+    virtual QList<LProduct*> getProductList() = 0;
+    virtual bool insertProduct(LProduct* p) = 0;
+    virtual bool updateProduct(LProduct* p) = 0;
+    virtual bool removeProduct(LProduct* p) = 0;
+
+    virtual QList<LUnit*> getUnitList(const int id) = 0;
+    virtual bool insertUnit(LUnit* p) = 0;
+    virtual bool hasUnit(const int id) = 0;
+    virtual LUnit* getUnit(const int id) = 0;
+    virtual bool updateUnit(LUnit* p) = 0;
+    virtual bool removeUnit(LUnit* p) = 0;
+
     virtual LPoint* getPoint(const int id) = 0;
     virtual QList<LChart*> getChartList(const int id) = 0;
     virtual QList<LPoint*> getPointList(const int chartId) = 0;

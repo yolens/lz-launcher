@@ -28,6 +28,19 @@ public:
     virtual bool stopPlugin() override;
 
     //IDataCenter
+    virtual LProduct* getProduct(const int id) override;
+    virtual QList<LProduct*> getProductList() override;
+    virtual bool insertProduct(LProduct* p) override;
+    virtual bool updateProduct(LProduct* p) override;
+    virtual bool removeProduct(LProduct* p) override;
+
+    virtual QList<LUnit*> getUnitList(const int id) override;
+    virtual LUnit* getUnit(const int id) override;
+    virtual bool insertUnit(LUnit* p) override;
+    virtual bool hasUnit(const int id) override;
+    virtual bool updateUnit(LUnit* p) override;
+    virtual bool removeUnit(LUnit* p) override;
+
     virtual QList<LChart*> getChartList(const int id) override;
     virtual LPoint* getPoint(const int id) override;
     virtual QList<LPoint*> getPointList(const int chartId) override;
@@ -52,6 +65,8 @@ public:
     virtual QMap<LDevice::DeviceState, int> deviceStateListByType(const int type) override;
 private:
    // QMap<int, QMap<int, LChart>> m_chartList; //图表信息
+    QMap<int, LProduct*> m_productList;
+    QMap<int, LUnit*> m_unitList;
     QMap<int, LPoint*> m_pointList; //自定义点信息列表
     QMap<int, LChart*> m_chartList;
     QMap<LOrder::Type, QList<LOrder*>> m_orderMap;

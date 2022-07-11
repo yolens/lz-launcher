@@ -9,9 +9,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    m_pWindow = new LZWindow();
-    m_pWindow->resize(1024, 768);
-    m_pWindow->hide();
 
     connect(ui->page_main, &MainForm::action, this, &MainWindow::on_action);
     switchPage(ui->page_main);
@@ -24,8 +21,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
-
-    m_pWindow->init();
+    ui->page_productMgr->init();
     ui->page_comsMgr->init();
     ui->page_main->init();
 }
@@ -36,7 +32,7 @@ void MainWindow::on_action(const int type)
     switch (pageType)
     {
     case MainForm::Views:
-        m_pWindow->show();
+        switchPage(ui->page_productMgr);
         break;
     case MainForm::Coms:
         switchPage(ui->page_comsMgr);

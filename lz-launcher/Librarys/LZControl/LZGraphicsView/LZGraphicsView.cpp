@@ -5,6 +5,8 @@
 #include "Items/Virtual.h"
 #include "Items/Start.h"
 #include "Items/Finish.h"
+#include "Items/Thread.h"
+#include "Items/Branch.h"
 #include "IPlugin.h"
 #include <QUndoView>
 #include <QUndoStack>
@@ -16,6 +18,19 @@ LZGraphicsView::LZGraphicsView(QWidget *parent)
     : QGraphicsView(parent)
 {
     init();
+}
+
+LZGraphicsView::~LZGraphicsView()
+{
+    uninit();
+}
+
+void LZGraphicsView::uninit()
+{
+    foreach (auto&& a, m_pScene->items())
+    {
+        qgraphicsitem_cast<Item*>(a)->setChart(nullptr);
+    }
 }
 
 void LZGraphicsView::init()
@@ -36,6 +51,14 @@ void LZGraphicsView::init()
     m_worker->start();
 
     createUndoView();
+
+    connect(m_pScene, &LZGraphicsScene::sig_addItem, this, [=](const int value){
+
+        QPoint pt = QCursor::pos();
+        pt = mapFromGlobal(pt);
+        QPointF ptf = mapToScene(pt);
+        addItem(static_cast<LCType>(value), ptf.toPoint());
+    });
 }
 
 void LZGraphicsView::createUndoView()
@@ -53,6 +76,11 @@ QWidget* LZGraphicsView::getUndoView()
     return m_undoView;
 }
 
+void LZGraphicsView::stopTest()
+{
+    m_worker->stopTest();
+}
+
 void LZGraphicsView::startTest()
 {
     QList<Item*> list;
@@ -68,7 +96,6 @@ void LZGraphicsView::startTest()
 #include <QMessageBox>
 void LZGraphicsView::onTestFinish()
 {
-    //QMessageBox::information(nullptr, "finish" , "finish");
     foreach (QGraphicsItem *gi, m_pScene->items())
     {
         gi->setEnabled(true);
@@ -77,16 +104,18 @@ void LZGraphicsView::onTestFinish()
 
 
 #include <QDebug>
-void LZGraphicsView::view(const QString& title, const QList<LChart*>& list)
+void LZGraphicsView::view(LUnit* pUnit)
 {
-    Q_UNUSED(title);
+    const QList<LChart*>& list = Plugin::DataCenterPlugin()->getChartList(pUnit->id);
+    m_pUnit = pUnit;
+
     QMap<int, Item*> itemList;
-    foreach(LChart* p, list)
+    foreach(const auto& p, list)
     {
         Item* item = addItem(p);
         itemList.insert(p->id, item);
     }
-    foreach(Item* p, itemList)
+    foreach(const auto& p, itemList)
     {
         LChart* lc = p->getChart();
         if (nullptr != lc)
@@ -115,7 +144,6 @@ Item* LZGraphicsView::addItem(LChart* p)
     if (nullptr != item)
     {
         m_pScene->addItem(item);
-        item->setPos(QPointF(p->m_pos));
         item->setChart(p);
         item->initData();
         item->updatePoint();
@@ -142,6 +170,12 @@ Item* LZGraphicsView::addItem(const LCType type)
     case LCType::LC_Finish:
         item = new Finish();
         break;
+    case LCType::LC_Thread:
+        item = new Thread();
+        break;
+    case LCType::LC_Branch:
+        item = new Branch();
+        break;
     default:
         break;
     }
@@ -149,7 +183,6 @@ Item* LZGraphicsView::addItem(const LCType type)
     {
         connect(item, &Item::action, this, &LZGraphicsView::onAction);
         connect(item, &Item::remove, this, &LZGraphicsView::onRemove);
-        connect(item, &Item::testing, m_worker, &DetectWorker::on_testing);
     }
     return item;
 }
@@ -159,17 +192,21 @@ Item* LZGraphicsView::addItem(const LCType type, const QPoint& pt)
     Item *item = addItem(type);
     if (nullptr != item)
     {
-        item->setPos(QPointF(pt));
         if (LCType::LC_Virtual != type)
         {
-            item->setChart(new LChart(type)); 
-            Plugin::DataCenterPlugin()->insertChart(item->getChart());
+            LChart *pChart = new LChart(type);
+            pChart->m_unitId = m_pUnit->id;
+
+            item->setChart(pChart);
+            Plugin::DataCenterPlugin()->insertChart(pChart);
             item->initData();
             item->createPoint();
             item->updatePoint();
 
             QUndoCommand *addCommand = new AddCommand(item, m_pScene);
             m_undoStack->push(addCommand);
+
+            item->setPos(QPointF(pt));
         }
     }
 
@@ -277,7 +314,7 @@ void LZGraphicsView::scaleView(qreal scaleFactor)
     scale(scaleFactor, scaleFactor);
 }
 
-
+#include <QMenu>
 void LZGraphicsView::onRemove()
 {
     Item *item = qobject_cast<Item*>(sender());
@@ -286,7 +323,10 @@ void LZGraphicsView::onRemove()
 
     m_pScene->removeItem(item);
     item->deleteLater();
+
+
 }
+
 
 void LZGraphicsView::onAction(const Item::ActionType type)
 {

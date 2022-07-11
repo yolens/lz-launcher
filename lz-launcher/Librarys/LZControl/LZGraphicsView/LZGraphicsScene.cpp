@@ -1,6 +1,7 @@
-#include "LZGraphicsScene.h"
+﻿#include "LZGraphicsScene.h"
 #include <QGraphicsSceneDragDropEvent>
 #include <QMimeData>
+#include "LZLib.h"
 
 LZGraphicsScene::LZGraphicsScene(QObject *parent)
     : QGraphicsScene(parent)
@@ -10,38 +11,53 @@ LZGraphicsScene::LZGraphicsScene(QObject *parent)
 
 void LZGraphicsScene::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
 {
-    if (event->mimeData()->hasFormat("Node/OrderTree1"))
+    if (event->mimeData()->hasFormat(Mime_Node_Scene))
     {
         event->setAccepted(true);
     }
     else
     {
-        event->setAccepted(false);
+        QGraphicsScene::dragEnterEvent(event);
     }
-    QGraphicsScene::dragEnterEvent(event);
 }
 void LZGraphicsScene::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
 {
-    event->setAccepted(true);
-    QGraphicsScene::dragMoveEvent(event);
+    if (event->mimeData()->hasFormat(Mime_Node_Scene))
+    {
+        event->setAccepted(true);
+    }
+    else
+    {
+        QGraphicsScene::dragMoveEvent(event);
+    }
 }
 void LZGraphicsScene::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
 {
-    QGraphicsScene::dragLeaveEvent(event);
+    if (event->mimeData()->hasFormat(Mime_Node_Scene))
+    {
+
+    }
+    else
+    {
+        QGraphicsScene::dragLeaveEvent(event);
+    }
 }
 
 
 void LZGraphicsScene::dropEvent(QGraphicsSceneDragDropEvent *event)
 {
-    if (event->mimeData()->hasFormat("Node/OrderTree1"))
+    if (event->mimeData()->hasFormat(Mime_Node_Scene))
     {
-        QVariant varData = event->mimeData()->data("Node/OrderTree1");
+        QVariant varData = event->mimeData()->data(Mime_Node_Scene);
         QByteArray byteData = varData.toByteArray();
         QDataStream stream(&byteData, QIODevice::ReadWrite);
         qint64 node;
         stream >> (node);
-
+        emit sig_addItem(node);
     }
-    QGraphicsScene::dropEvent(event);
+    else
+    {
+        QGraphicsScene::dropEvent(event);
+    }
 }
 

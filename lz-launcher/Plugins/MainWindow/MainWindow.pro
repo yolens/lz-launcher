@@ -37,12 +37,14 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     Form/ComsMgrForm.cpp \
     Form/MainForm.cpp \
+    Form/ProductMgrFrom.cpp \
     MainWindow.cpp \
     MainWindowPlugin.cpp
 
 HEADERS += \
     Form/ComsMgrForm.h \
     Form/MainForm.h \
+    Form/ProductMgrFrom.h \
     MainWindow.h \
     MainWindowPlugin.h
 
@@ -57,4 +59,5 @@ unix {
 FORMS += \
     Form/ComsMgrForm.ui \
     Form/MainForm.ui \
+    Form/ProductMgrFrom.ui \
     MainWindow.ui

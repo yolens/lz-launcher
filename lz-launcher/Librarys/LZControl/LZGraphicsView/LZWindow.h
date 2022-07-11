@@ -5,6 +5,7 @@
 #include "LZControl_global.h"
 #include "LZGraphicsView.h"
 #include "LTreeMode.h"
+#include "UnitTreeMode.h"
 #include <QComboBox>
 
 namespace Ui {
@@ -19,7 +20,8 @@ public:
     explicit LZWindow(QWidget *parent = nullptr);
     ~LZWindow();
 
-    void init();
+    void init(LProduct *p);
+    void init(LUnit *unit, LProduct *product);
 private slots:
     void on_sceneZoom(const int value);
 
@@ -31,6 +33,7 @@ private:
     Ui::LZWindow *ui;
     LZGraphicsView *m_pView = nullptr;
     LTreeMode *m_pTreeMode = nullptr;
+    UnitTreeMode *m_pUnitTreeMode = nullptr;
 
     QMenu *m_fileMenu = nullptr;
     QMenu *m_itemMenu = nullptr;
@@ -40,6 +43,9 @@ private:
 
     QToolBar *m_editToolBar = nullptr;
     QToolBar *m_pointerToolbar = nullptr;
+
+    LProduct* m_pProduct = nullptr;
+    LUnit* m_pUnit = nullptr;
 };
 
 #endif // LZWINDOW_H

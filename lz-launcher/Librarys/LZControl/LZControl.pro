@@ -30,7 +30,15 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    Card/AddCard.cpp \
+    Card/Card.cpp \
+    Card/NodeCard.cpp \
     Delegate/ComboBoxDelegate.cpp \
+    Dialog/BaseDlg.cpp \
+    Dialog/ChartDlg.cpp \
+    Drag/ChartDrag.cpp \
+    Drag/DragWidget.cpp \
+    Drag/PointDrag.cpp \
     LOrderModel.cpp \
     LTreeItem.cpp \
     LTreeMode.cpp \
@@ -38,18 +46,30 @@ SOURCES += \
     LZGraphicsView/ChartDialog.cpp \
     LZGraphicsView/Commands.cpp \
     LZGraphicsView/DetectWorker.cpp \
+    LZGraphicsView/Items/Branch.cpp \
     LZGraphicsView/Items/Finish.cpp \
     LZGraphicsView/Items/Item.cpp \
     LZGraphicsView/Items/Line.cpp \
     LZGraphicsView/Items/Node.cpp \
     LZGraphicsView/Items/Start.cpp \
+    LZGraphicsView/Items/Thread.cpp \
     LZGraphicsView/Items/Virtual.cpp \
     LZGraphicsView/LZGraphicsScene.cpp \
     LZGraphicsView/LZGraphicsView.cpp \
-    LZGraphicsView/LZWindow.cpp
+    LZGraphicsView/LZWindow.cpp \
+    ScrollAreaForm.cpp \
+    UnitTreeMode.cpp
 
 HEADERS += \
+    Card/AddCard.h \
+    Card/Card.h \
+    Card/NodeCard.h \
     Delegate/ComboBoxDelegate.h \
+    Dialog/BaseDlg.h \
+    Dialog/ChartDlg.h \
+    Drag/ChartDrag.h \
+    Drag/DragWidget.h \
+    Drag/PointDrag.h \
     LOrderModel.h \
     LTreeItem.h \
     LTreeMode.h \
@@ -58,15 +78,19 @@ HEADERS += \
     LZGraphicsView/ChartDialog.h \
     LZGraphicsView/Commands.h \
     LZGraphicsView/DetectWorker.h \
+    LZGraphicsView/Items/Branch.h \
     LZGraphicsView/Items/Finish.h \
     LZGraphicsView/Items/Item.h \
     LZGraphicsView/Items/Line.h \
     LZGraphicsView/Items/Node.h \
     LZGraphicsView/Items/Start.h \
+    LZGraphicsView/Items/Thread.h \
     LZGraphicsView/Items/Virtual.h \
     LZGraphicsView/LZGraphicsScene.h \
     LZGraphicsView/LZGraphicsView.h \
-    LZGraphicsView/LZWindow.h
+    LZGraphicsView/LZWindow.h \
+    ScrollAreaForm.h \
+    UnitTreeMode.h
 
 # Default rules for deployment.
 unix {
@@ -75,5 +99,9 @@ unix {
 !isEmpty(target.path): INSTALLS += target
 
 FORMS += \
+    Card/AddCard.ui \
+    Card/NodeCard.ui \
+    Dialog/ChartDlg.ui \
     LZGraphicsView/ChartDialog.ui \
-    LZGraphicsView/LZWindow.ui
+    LZGraphicsView/LZWindow.ui \
+    ScrollAreaForm.ui

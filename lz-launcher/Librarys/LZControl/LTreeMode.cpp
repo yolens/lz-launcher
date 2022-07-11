@@ -1,6 +1,7 @@
 ﻿#include "LTreeMode.h"
 #include <QMimeData>
 #include <QDataStream>
+#include "LZLib.h"
 
 LTreeMode::LTreeMode(QMap<LOrder::Type, QList<LOrder*>>& data, QObject *parent)
     : QAbstractItemModel(parent)
@@ -164,7 +165,7 @@ QMimeData* LTreeMode::mimeData(const QModelIndexList &indexes) const
         QByteArray encoded;
         QDataStream stream(&encoded, QIODevice::WriteOnly);
         stream << (qint64)(node->data());
-        mimeD->setData("Node/OrderTree", encoded);
+        mimeD->setData(Mime_Node_Chart, encoded);
     }
     else
     {

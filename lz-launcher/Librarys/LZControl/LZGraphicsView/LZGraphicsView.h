@@ -15,15 +15,18 @@ class LZCONTROL_EXPORT LZGraphicsView : public QGraphicsView
     Q_OBJECT
 public:
     explicit LZGraphicsView(QWidget *parent = nullptr);
+    ~LZGraphicsView();
 
-    void view(const QString& title, const QList<LChart*>& list);
+    void view(LUnit* pUnit);
     void startTest();
+    void stopTest();
     Item* addItem(LChart* p);
     Item* addItem(const LCType type);
     Item* addItem(const LCType type, const QPoint& pt);
     QWidget* getUndoView();
 private:
     void init();
+    void uninit();
     void cancelEditing();
     void createUndoView();
     void zoomIn();
@@ -53,6 +56,8 @@ private:
     QUndoView *m_undoView = nullptr;
     QGraphicsItem* m_movingItem = nullptr;
     QPointF m_oldPos;
+
+    LUnit* m_pUnit = nullptr;
 };
 
 #endif // LZGRAPHICSVIEW_H

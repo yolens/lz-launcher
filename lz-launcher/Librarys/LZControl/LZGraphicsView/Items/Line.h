@@ -14,7 +14,7 @@ public:
     virtual void setDest(Item *item) override;
     virtual Item* getSource() override;
     virtual Item* getDest() override;
-    virtual void startTest() override;
+    virtual bool startTest() override;
 private:
     void adjustLine();
 public:

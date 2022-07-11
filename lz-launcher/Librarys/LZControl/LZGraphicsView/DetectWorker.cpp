@@ -16,10 +16,16 @@ void DetectWorker::setList(QList<Item*>& list)
     m_list = list;
 }
 
+void DetectWorker::stopTest()
+{
+    m_stopTest = true;
+}
+
 void DetectWorker::on_detect_start()
 {
+    m_stopTest = false;
     Item *start = nullptr;
-    foreach(auto a, m_list)
+    foreach(const auto& a, m_list)
     {
         a->initTest();
         if (a->getChart()->m_type == LCType::LC_Start)
@@ -28,18 +34,33 @@ void DetectWorker::on_detect_start()
         }
     }
     if (start)
+    {
         start->startTest();
+        testing(start);
+    }
 }
 #include <QDebug>
-void DetectWorker::on_testing()
+void DetectWorker::testing(Item *item)
 {
-    Item *item = qobject_cast<Item*>(sender());
+    QThread::msleep(1);
+
+    //另外线程启动流程回调
+    std::function<void(Item *p)> callback = [=](Item *p){
+        testing(p);
+    };
+
+    if (m_stopTest)
+    {
+        emit testFinished();
+        return;
+    }
     if (nullptr == item)
         return;
     bool bTesting = false;
     LPoint *circuitP = nullptr;
     LPoint *valueP = nullptr;
-    foreach (LPoint *p, item->getPointList())
+    //选择符合条件的点
+    foreach (const auto& p, item->getPointList())
     {
         if (p->type == LPType::circuit)
         {
@@ -53,14 +74,14 @@ void DetectWorker::on_testing()
         }
     }
 
-
-    if (nullptr != valueP) //先赋值
+    //先赋值
+    if (nullptr != valueP)
     {
-        foreach (auto p, item->getPointList())
+        foreach (const auto& p, item->getPointList())
         {
             if (p->type == LPType::value)
             {
-                foreach (auto line, m_list)
+                foreach (const auto& line, m_list)
                 {
                     if (line->getChart()->m_sourcePointId == p->id)
                     {
@@ -77,7 +98,25 @@ void DetectWorker::on_testing()
                                     break;
                                 }
                             }
-                            dest->setInputValue(destP->valueId, item->getInputValue(p->valueId));
+                            QVariant value = item->getInputValue(p->valueId);
+                            Item::FunctionType funcType = dest->setInputValue(destP->valueId, value);
+                            switch (funcType)
+                            {
+                            case Item::FunctionType::Nromal_func:
+                                break;
+                            case Item::FunctionType::ValueTrigger_func:
+                            {
+                                const LPoint *nextP = dest->getNextPoint(value);
+                                if (nullptr != nextP)
+                                {
+
+                                }
+                            }
+                                break;
+                            default:
+                                break;
+                            }
+
                             break;
                         }
                     }
@@ -85,9 +124,11 @@ void DetectWorker::on_testing()
             }
         }
     }
-    if (nullptr != circuitP) //走下一个节点
+
+    //寻找下一个节点
+    if (nullptr != circuitP)
     {
-        foreach (auto a, m_list)
+        foreach (const auto& a, m_list)
         {
             if (a->getChart()->m_sourcePointId == circuitP->id)
             {
@@ -96,7 +137,14 @@ void DetectWorker::on_testing()
                 if (nullptr != dest)
                 {
                     bTesting = true;
-                    dest->startTest(); //node
+                    if (dest->startTest()) //node
+                    {
+                        testing(dest);
+                    }
+                    else
+                    {
+                        dest->testing(callback);
+                    }
                     break;
                 }
             }
@@ -106,5 +154,7 @@ void DetectWorker::on_testing()
     if (!bTesting)
     {
         emit testFinished();
+        //on_detect_start();
     }
 }
+

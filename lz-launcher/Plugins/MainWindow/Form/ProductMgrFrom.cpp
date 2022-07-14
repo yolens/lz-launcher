@@ -11,14 +11,18 @@ ProductMgrFrom::ProductMgrFrom(QWidget *parent) :
     m_productGroup = new QButtonGroup(this);
     m_unitGroup = new QButtonGroup(this);
     m_addProductCard = new AddCard();
+    m_addProductCard->setMinimumSize(100, 100);
     connect(m_addProductCard, &Card::add_action, this, [=](){
         LProduct *newp = new LProduct;
         Plugin::DataCenterPlugin()->insertProduct(newp);
+        newp->name = QString("product%1").arg(newp->id);
+        Plugin::DataCenterPlugin()->updateProduct(newp);
         addProductCard(newp);
         adjustProductView();
     });
 
     m_addUnitCard = new AddCard();
+    m_addUnitCard->setMinimumSize(100, 100);
     connect(m_addUnitCard, &Card::add_action, this, [=](){
 
         Card *card = dynamic_cast<Card*>(m_productGroup->checkedButton());
@@ -26,8 +30,9 @@ ProductMgrFrom::ProductMgrFrom(QWidget *parent) :
             return;
         LUnit *unit = new LUnit;
         unit->productId = card->id();
-        unit->name = "##k";
         Plugin::DataCenterPlugin()->insertUnit(unit);
+        unit->name = QString("uint%1").arg(unit->id);
+        Plugin::DataCenterPlugin()->updateUnit(unit);
         addUnitCard(unit);
         adjustUnitView();
     });
@@ -58,6 +63,7 @@ void ProductMgrFrom::init()
 void ProductMgrFrom::addUnitCard(LUnit* p)
 {
     Card *c = new NodeCard();
+    c->setMinimumSize(100, 100);
     m_unitGroup->addButton(c);
     c->setId(p->id);
     c->setName(p->name);
@@ -68,11 +74,8 @@ void ProductMgrFrom::addUnitCard(LUnit* p)
     });
 
     connect(c, &Card::start_action, this, [=]{
-        if (nullptr != m_pWindow)
-            delete m_pWindow;
-        m_pWindow = new LZWindow;
+        createWindow();
         m_pWindow->init(p, Plugin::DataCenterPlugin()->getProduct(p->productId));
-        m_pWindow->show();
     });
 
     connect(c, &Card::close_action, this, [=]{
@@ -87,19 +90,28 @@ void ProductMgrFrom::addUnitCard(LUnit* p)
     });
 }
 
+void ProductMgrFrom::createWindow()
+{
+    if (nullptr != m_pWindow)
+        delete m_pWindow;
+    m_pWindow = new LZWindow();
+    connect(m_pWindow, &LZWindow::destroyWindow, this, [=]{
+        m_pWindow = nullptr;
+    });
+    m_pWindow->show();
+}
+
 void ProductMgrFrom::addProductCard(LProduct* p)
 {
     Card *c = new NodeCard();
+    c->setMinimumSize(100, 100);
     m_productGroup->addButton(c);
     c->setId(p->id);
     c->setName(p->name);
 
     connect(c, &Card::start_action, this, [=]{
-        if (nullptr != m_pWindow)
-            delete m_pWindow;
-        m_pWindow = new LZWindow;
+        createWindow();
         m_pWindow->init(p);
-        m_pWindow->show();
     });
     connect(c, &Card::name_change_action, this, [=](const QString& text){
         p->name = text;

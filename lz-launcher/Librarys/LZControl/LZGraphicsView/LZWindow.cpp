@@ -17,6 +17,7 @@ LZWindow::LZWindow(QWidget *parent) :
     ui->setupUi(this);
 
     m_pView = new LZGraphicsView(this);
+    this->setAttribute(Qt::WA_DeleteOnClose);
     connect(m_pView, &LZGraphicsView::sceneZoom, this, &LZWindow::on_sceneZoom);
     ui->treeView->setHeaderHidden(true);
     ui->treeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -30,9 +31,10 @@ LZWindow::LZWindow(QWidget *parent) :
 
 
 }
-
+#include <QDebug>
 LZWindow::~LZWindow()
 {
+    qInfo() << "~LZWindow........................";
     delete ui;
 }
 
@@ -115,38 +117,30 @@ void LZWindow::createMenus()
 void LZWindow::createToolbars()
 {
     ChartDrag *nodeAction = new ChartDrag(m_editToolBar);
-    nodeAction->setText("NodeItem");
+    nodeAction->setText("Node");
     nodeAction->setType(LCType::LC_Node);
 
     ChartDrag *startAction = new ChartDrag(m_editToolBar);
-    startAction->setText("StartItem");
+    startAction->setText("Start");
     startAction->setType(LCType::LC_Start);
 
     ChartDrag *finishAction = new ChartDrag(m_editToolBar);
-    finishAction->setText("FinishItem");
+    finishAction->setText("Finish");
     finishAction->setType(LCType::LC_Finish);
 
     ChartDrag *threadAction = new ChartDrag(m_editToolBar);
-    threadAction->setText("ThreadItem");
+    threadAction->setText("Thread");
     threadAction->setType(LCType::LC_Thread);
 
     ChartDrag *branchAction = new ChartDrag(m_editToolBar);
-    branchAction->setText("BranchItem");
+    branchAction->setText("Branch");
     branchAction->setType(LCType::LC_Branch);
 
-    PointDrag *pointAction = new PointDrag(m_editToolBar);
-    pointAction->setText("PointItem");
+    PointDrag *outCircuitAction = new PointDrag(LPType::circuit, LPAttribute::output, m_editToolBar);
+    outCircuitAction->setText("outCircuit");
 
-
-    QAction *testAction = new QAction(tr("&Test"), this);
-    connect(testAction, &QAction::triggered, this, [=]{
-        m_pView->startTest();
-    });
-
-    QAction *stopAction = new QAction(tr("&Stop"), this);
-    connect(stopAction, &QAction::triggered, this, [=]{
-        m_pView->stopTest();
-    });
+    PointDrag *outValueAction = new PointDrag(LPType::value, LPAttribute::output, m_editToolBar);
+    outValueAction->setText("outValue");
 
 
     m_editToolBar = addToolBar(tr("Edit"));
@@ -156,9 +150,22 @@ void LZWindow::createToolbars()
     m_editToolBar->addWidget(finishAction);
     m_editToolBar->addWidget(threadAction);
     m_editToolBar->addWidget(branchAction);
-    m_editToolBar->addWidget(pointAction);
-    m_editToolBar->addAction(testAction);
-    m_editToolBar->addAction(stopAction);
+    m_editToolBar->addWidget(outCircuitAction);
+    m_editToolBar->addWidget(outValueAction);
+
+
+    QToolBar *actionToolBar = addToolBar(tr("Action"));
+    QAction *testAction = new QAction(tr("&Test"), this);
+    connect(testAction, &QAction::triggered, this, [=]{
+        m_pView->startTest();
+    });
+
+    QAction *stopAction = new QAction(tr("&Stop"), this);
+    connect(stopAction, &QAction::triggered, this, [=]{
+        m_pView->stopTest();
+    });
+    actionToolBar->addAction(testAction);
+    actionToolBar->addAction(stopAction);
 
 
     QComboBox *sceneScaleCombo = new QComboBox(this);
@@ -206,5 +213,19 @@ void LZWindow::createDockWindows()
     addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
-
+#include <QMessageBox>
+#include <QCloseEvent>
+void LZWindow::closeEvent(QCloseEvent* event)
+{
+    if (m_pView->runningCount() > 0)
+    {
+        if (QMessageBox::Yes != QMessageBox::information(nullptr, "title", "是否要结束流程？", QMessageBox::Yes | QMessageBox::No))
+        {
+            event->setAccepted(false);
+            return;
+        }
+    }
+    m_pView->stopTest();
+    emit destroyWindow();
+}
 

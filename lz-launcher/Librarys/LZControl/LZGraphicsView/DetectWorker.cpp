@@ -7,6 +7,18 @@ DetectWorker::DetectWorker(QObject *parent) : QObject(parent)
     connect(this, &DetectWorker::valueTrigger, this, &DetectWorker::on_value_trigger);
 }
 
+DetectWorker::~DetectWorker()
+{
+    m_stopTest = true;
+    if (nullptr != m_thread)
+    {
+        m_thread->quit();
+        m_thread->wait();
+        delete m_thread;
+        m_thread = nullptr;
+    }
+}
+
 void DetectWorker::start()
 {
     m_thread->start();
@@ -17,29 +29,38 @@ void DetectWorker::setList(QList<Item*>& list)
     m_list = list;
 }
 
+int DetectWorker::runningCount()
+{
+    return m_threadCount;
+}
+
 void DetectWorker::stopTest()
 {
     m_stopTest = true;
 }
-#include <QDebug>
-void DetectWorker::on_value_trigger(const int pid)
+
+Item* DetectWorker::nextItemRunning(const int pid)
 {
-    std::function<void(Item *p)> callback = [=](Item *p){
+    static std::function<void(Item *p)> callback = [=](Item *p){
         testing(p);
     };
 
+    Item *item = nullptr;
     foreach (const auto& a, m_list)
     {
         if (a->getChart()->m_sourcePointId == pid)
         {
             a->startTest(); //line
-            Item* item = a->getDest();
-            //testing(item);
+            item = a->getDest();
+            if (nullptr == item)
+                return nullptr;
+            item->setTestingInput(a->getChart()->m_destPointId);
             if (nullptr != item)
             {
                 if (!item->startTest()) //node
                 {
                     item->testing(callback);
+                    return nullptr;
                 }
 
                 break;
@@ -47,6 +68,13 @@ void DetectWorker::on_value_trigger(const int pid)
         }
     }
 
+    return item;
+}
+
+#include <QDebug>
+void DetectWorker::on_value_trigger(const int pid)
+{
+    nextItemRunning(pid);
 }
 
 void DetectWorker::on_detect_start()
@@ -66,43 +94,28 @@ void DetectWorker::on_detect_start()
         start->startTest();
         testing(start);
     }
+    else
+    {
+        emit testFinished();
+    }
 }
 
 void DetectWorker::testing(Item *item)
 {
-    qInfo() << "YYYYYYYYYYYYYYYYYYYYY";
-    //另外线程启动流程回调
-    std::function<void(Item *p)> callback = [=](Item *p){
-        testing(p);
-    };
+    Item *headItem = item;
+    m_threadCount++;
+    qInfo() << "EEEEEEEEEEEEEEEEEEEEEEEEE1" << QThread::currentThread() << m_threadCount;
     while (true)
     {
-        QThread::msleep(1);
-
-        if (m_stopTest)
+        if (nullptr == item || m_stopTest || headItem->isThreadStoped())
         {
-            emit testFinished();
+            qInfo() << "DDDDDDDDDDDDDDDDDDDDDDDD";
             break;
         }
-        if (nullptr == item)
-            break;
 
-        LPoint *circuitP = nullptr;
-        LPoint *valueP = nullptr;
         //选择符合条件的点
-        foreach (const auto& p, item->getPointList())
-        {
-            if (p->type == LPType::circuit)
-            {
-                if (p->attribute == LPAttribute::output)
-                    circuitP = p;
-            }
-            else if (p->type == LPType::value)
-            {
-                if (p->attribute == LPAttribute::output)
-                    valueP = p;
-            }
-        }
+        const LPoint *circuitP = item->nextCircuitPoint();
+        const LPoint *valueP = item->nextValuePoint();
 
         //先赋值
         if (nullptr != valueP)
@@ -129,17 +142,18 @@ void DetectWorker::testing(Item *item)
                                     }
                                 }
 
-                                QVariant value = p->outValue;
-
-                                destP->outValue = value;
+                                //把上个元素的值传递到下个元素的点上
+                                destP->outValue = p->outValue;
                                 destP->outByteType = p->outByteType;
+
+                                //是否有值触发的流程事件
                                 switch (dest->witchFunction())
                                 {
                                 case Item::FunctionType::Nromal_func:
                                     break;
                                 case Item::FunctionType::ValueTrigger_func:
                                 {
-                                    const LPoint *nextP = dest->startTest(value);
+                                    const LPoint *nextP = dest->startTest(destP->outValue, destP->outByteType);
                                     if (nullptr != nextP)
                                     {
                                         emit valueTrigger(nextP->id);
@@ -162,34 +176,16 @@ void DetectWorker::testing(Item *item)
         item = nullptr;
         if (nullptr != circuitP)
         {
-            foreach (const auto& a, m_list)
-            {
-                if (a->getChart()->m_sourcePointId == circuitP->id)
-                {
-                    a->startTest(); //line
-                    item = a->getDest();
-                    if (nullptr != item)
-                    {
-                        if (!item->startTest()) //node
-                        {
-                            item->testing(callback);
-                            return;
-                        }
-                        break;
-                    }
-                }
-            }
+            item = nextItemRunning(circuitP->id);
         }
 
-        if (nullptr == item)
-        {
-
-            emit testFinished();
-            //on_detect_start();
-            break;
-        }
+        QThread::msleep(1);
     }
 
-    qInfo() << "EEEEEEEEEEEEEEEEEEEEEEEEE" << QThread::currentThread();
+    m_threadCount--;
+    if (m_threadCount <= 0)
+        emit testFinished();
+
+    qInfo() << "EEEEEEEEEEEEEEEEEEEEEEEEE2" << QThread::currentThread() << m_threadCount;
 }
 

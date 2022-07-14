@@ -61,13 +61,12 @@ DeviceCom::DeviceCom(QWidget *parent) :
     });
 
     m_worker = new DeviceWorker();
-    connect(this, &DeviceCom::create_device, m_worker, &DeviceWorker::on_create_device);
-    connect(this, &DeviceCom::connect_device, m_worker, &DeviceWorker::on_connect_device);
-    connect(this, &DeviceCom::action_data, m_worker, &DeviceWorker::on_action_data);
+    connect(this, &DeviceCom::start_work, m_worker, &DeviceWorker::on_start_work);
     connect(m_worker, &DeviceWorker::message, this, &DeviceCom::on_message);
     connect(m_worker, &DeviceWorker::result, this, &DeviceCom::on_result);
     m_worker->start();
 
+    emit start_work();
    // ui->comboBox_parity->setItemData(ui->comboBox_parity->findText("Even"), false, Qt::UserRole-1);
 
 }
@@ -120,7 +119,7 @@ void DeviceCom::on_result(const int code)
         info.baudRate = BaudRateM.value(this->baudRate());
         info.dataBits = DataBitsM.value(this->dataBits());
         info.stopBits = StopBitsM.value(this->stopBits());
-        emit connect_device(info);
+        m_worker->connectDevice(info);
     }
         break;
     case DeviceWorker::UnconnectedResult:
@@ -149,12 +148,12 @@ void DeviceCom::on_result(const int code)
         }
         ui->pushButton_connect->setEnabled(true);
         ui->pushButton_connect->setText("断开");
-        emit action_data();
+        //emit action_data();
     }
         break;
     case DeviceWorker::FinishResult:
     {
-        emit create_device();
+        //emit create_device();
 
     }
         break;
@@ -187,12 +186,10 @@ void DeviceCom::connectDevice()
     on_pushButton_connect_clicked();
 }
 
-void DeviceCom::execute(LOrder* order)
+bool DeviceCom::execute(LOrder* order)
 {
-   // emit action_data();
-   // m_orderList.push_back(order);
     m_worker->addIn(order);
-
+    return true;
 }
 
 bool DeviceCom::loadDb()
@@ -345,7 +342,7 @@ void DeviceCom::on_pushButton_connect_clicked()
 {
     if (ui->checkBox_enable->isChecked())
     {
-        m_worker->actionDataStop();
+        m_worker->createDevice();
     }
 }
 

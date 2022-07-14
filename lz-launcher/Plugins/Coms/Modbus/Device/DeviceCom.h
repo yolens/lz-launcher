@@ -150,7 +150,7 @@ public:
     virtual void setStopBits(const QString& value) override;
     virtual void setUseEnable(const bool value) override;
 
-    virtual void execute(LOrder* order) override;
+    virtual bool execute(LOrder* order) override;
     virtual LDevice::DeviceState deviceState() override;
 public:
     bool bindValue(QSqlQuery& query);
@@ -162,9 +162,7 @@ signals:
     void changeDeviceName();
     void updateView();
 
-    void create_device();
-    void connect_device(const DeviceWorker::DeviceInfo& info);
-    void action_data();
+    void start_work();
 private slots:
     void on_result(const int code);
     void on_message(const QString& msg);

@@ -27,7 +27,7 @@ DeviceWorker::~DeviceWorker()
     }
 }
 
-void DeviceWorker::on_create_device()
+void DeviceWorker::createAction()
 {
     if (nullptr == m_modbusDevice)
     {
@@ -43,7 +43,7 @@ void DeviceWorker::on_create_device()
     emit result(Result::CreateFinished);
 }
 
-void DeviceWorker::on_connect_device(const DeviceWorker::DeviceInfo& info)
+void DeviceWorker::connectAction(const DeviceWorker::DeviceInfo& info)
 {
     if (nullptr == m_modbusDevice)
     {
@@ -76,21 +76,12 @@ void DeviceWorker::on_connect_device(const DeviceWorker::DeviceInfo& info)
     }
 }
 
-void DeviceWorker::on_action_data()
+void DeviceWorker::sendAction()
 {
-    if (nullptr == m_modbusDevice)
+    LOrder *item = takeOut();
+    if (nullptr != item)
     {
-        emit message("设备还未创建!");
-        return;
-    }
-    m_stop = false;
-    while (!m_stop)
-    {
-        m_sem.acquire();
-        if (m_stop)
-            break;
-        LOrder *item = takeOut();
-        if (nullptr != item)
+        if (nullptr != m_modbusDevice)
         {
             if (item->rwType() == LOrder::Write)
             {
@@ -100,13 +91,52 @@ void DeviceWorker::on_action_data()
             {
                 read(item);
             }
-            if (item->valueCallback() != nullptr)
-                item->valueCallback()(item->value());
-            delete item;
         }
+        else
+        {
+            emit message("设备还未创建!");
+        }
+
+       // item->value().clear();
+        if (item->valueCallback() != nullptr)
+            item->valueCallback()(item->value());
+        delete item;
+    }
+}
+
+
+
+void DeviceWorker::on_start_work()
+{
+    m_stop = false;
+    while (!m_stop)
+    {
+        m_sem.acquire();
+
+        if (m_stop)
+            break;
+
+        switch (m_action)
+        {
+        case Action::Create_action:
+            createAction();
+            m_action = Action::Send_action;
+            break;
+        case Action::Connect_action:
+            connectAction(m_info);
+            m_action = Action::Send_action;
+            break;
+        case Send_action:
+            sendAction();
+            break;
+        default:
+            break;
+        }
+
         QThread::msleep(1);
     }
-    emit result(Result::FinishResult);
+  //  emit result(Result::FinishResult);
+
 }
 
 void DeviceWorker::on_errorOccurred(QModbusDevice::Error error)
@@ -153,6 +183,20 @@ void DeviceWorker::actionDataStop()
         emit result(Result::FinishResult);
     }
 }
+
+void DeviceWorker::createDevice()
+{
+    m_action = Action::Create_action;
+    m_sem.release();
+}
+void DeviceWorker::connectDevice(const DeviceWorker::DeviceInfo& info)
+{
+    m_info = info;
+    m_action = Action::Connect_action;
+    m_sem.release();
+}
+
+
 
 void DeviceWorker::addIn(LOrder* order)
 {
@@ -252,7 +296,7 @@ void DeviceWorker::read(LOrder* order)
                         {
                             const QString entry = tr("Address: %1, Value: %2").arg(unit.startAddress() + i)
                                                      .arg(QString::number(unit.value(i)));
-                            qDebug() << "KKK111= " << entry;
+                            //qDebug() << "KKK111= " << entry;
 
                             quint64 temp = unit.value(i);
                             u64 += temp << i*16;
@@ -260,7 +304,7 @@ void DeviceWorker::read(LOrder* order)
 
                         order->setValue(LZLib::instance()->fromLonglong(order->byteType(), QVariant(u64)));
 
-                        qDebug() << "KKK33= " << u64 << order->value();
+                        //qDebug() << "KKK33= " << u64 << order->value();
                     }
                     else
                     {

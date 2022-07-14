@@ -81,7 +81,6 @@ void ChartDlg::updateView()
         std::function<void()> setValueCB;
         QLineEdit *lineEdit;
         QSpinBox *spinBox;
-       // QDoubleSpinBox *doubleSpinBox;
 
         QGroupBox *group;
         QGridLayout *grid;
@@ -99,29 +98,25 @@ void ChartDlg::updateView()
             m_valueSetList.push_back(setValueCB);
             addItem(grid, "名称:", lineEdit);
 
-            /*doubleSpinBox = new QDoubleSpinBox(this);
-            doubleSpinBox->setRange(-qInf(), qInf());
-            doubleSpinBox->setValue(pChart->m_value.toDouble());
-            setValueCB = [=]{pChart->m_value = doubleSpinBox->value();};
-            m_valueSetList.push_back(setValueCB);
-            addItem(grid, "值:", doubleSpinBox);*/
             LOrder *pOrder = m_item->getOrder();
+            LOrder::ByteType byteType = LOrder::DEC;
             if (nullptr != pOrder)
             {
-                lineEdit = new QLineEdit(this);
-                connect(lineEdit, &QLineEdit::editingFinished, this, [=](){
-                    QVariant u64 = lineEdit->text();
-                    u64 = LZLib::instance()->toLonglong(pOrder->byteType(), u64);
-                    u64 = LZLib::instance()->fromLonglong(pOrder->byteType(), u64);
-                    lineEdit->setText(u64.toString());
-                });
-                lineEdit->setText(pChart->m_value.toString());
-                setValueCB = [=]{
-                    pChart->m_value = lineEdit->text();
-                };
-                m_valueSetList.push_back(setValueCB);
-                addItem(grid, "值:", lineEdit);
+                byteType = pOrder->byteType();
             }
+            lineEdit = new QLineEdit(this);
+            connect(lineEdit, &QLineEdit::editingFinished, this, [=](){
+                QVariant u64 = lineEdit->text();
+                u64 = LZLib::instance()->toLonglong(byteType, u64);
+                u64 = LZLib::instance()->fromLonglong(byteType, u64);
+                lineEdit->setText(u64.toString());
+            });
+            lineEdit->setText(pChart->m_value.toString());
+            setValueCB = [=]{
+                pChart->m_value = lineEdit->text();
+            };
+            m_valueSetList.push_back(setValueCB);
+            addItem(grid, "值:", lineEdit);
 
 
             spinBox = new QSpinBox(this);
@@ -186,11 +181,28 @@ void ChartDlg::updateView()
                     layout->addWidget(lineEdit);
 
                     addItem(grid, QString("P%1:").arg(m_item->getPointList().indexOf(p)), w);
-                }
+                }  
             }
 
             infoLayout->addWidget(group);
         }
+
+        foreach(const auto& p, m_item->getPointList())
+        {
+            if (p->type == LPType::circuit && p->attribute == LPAttribute::input)
+            {
+                spinBox = new QSpinBox(this);
+                spinBox->setRange(1, std::numeric_limits<int>::max());
+                spinBox->setValue(p->max);
+                connect(spinBox, &QSpinBox::editingFinished, this, [=]{
+                    spinBox->setValue(qMax(p->count, spinBox->value()));
+                });
+                setValueCB = [=]{p->max = spinBox->value();};
+                m_valueSetList.push_back(setValueCB);
+                addItem(grid, QString("最大元素连接数(P%1):").arg(m_item->getPointList().indexOf(p)), spinBox);
+            }
+        }
+
     }
     m_mainLayout->addWidget(infoWidget);
     infoWidget->setEnabled(false);

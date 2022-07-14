@@ -10,7 +10,7 @@ public:
     explicit Branch(QObject *parent = nullptr);
 
     virtual bool startTest() override;
-    virtual const LPoint* startTest(const QVariant& value) override;
+    virtual const LPoint* startTest(const QVariant& value, const LOrder::ByteType type) override;
     virtual void createPoint() override;
     virtual Item::FunctionType witchFunction() override;
 private:

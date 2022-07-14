@@ -30,19 +30,24 @@ void ScrollAreaForm::view(const QList<QWidget*>& list)
     int x = 0;
     int y = edge;
     int w =  (ui->scrollAreaWidgetContents->width()-number*edge-spacing)/number;
-    int h = w*0.7;
+    int h = 0;//w*0.7;
 
     for (int i = 0; i < list.count(); i++)
     {
         QWidget *bt = list.value(i);
         bt->setParent(ui->scrollAreaWidgetContents);
-        bt->resize(w,h);
+        bt->adjustSize();
+        bt->resize(w,bt->height());
+        h = qMax(h, bt->height());
 
         if (i%number == 0)
         {
             x = edge;
             if (0 != i)
+            {
                 y += h+spacing;
+               // h = 0;
+            }
         }
         else
         {

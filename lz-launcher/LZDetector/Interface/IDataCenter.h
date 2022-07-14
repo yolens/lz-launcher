@@ -34,7 +34,7 @@ public:
 
 
 
-    virtual void execute(LOrder* p) = 0; //执行
+    virtual bool execute(LOrder* p) = 0; //执行
     virtual QMap<LOrder::Type, QList<LOrder*>>& getOrderList() = 0;
     virtual LOrder* newOrder(LOrder* p) = 0;
     virtual LOrder* getOrder(const int id, const int type) = 0;

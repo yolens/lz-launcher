@@ -13,6 +13,7 @@ void ChartDrag::setType(const LCType type)
 #include <QMimeData>
 void ChartDrag::mouseMoveEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     QDrag *drag = new QDrag(this);
     QMimeData *mime = new QMimeData;
 

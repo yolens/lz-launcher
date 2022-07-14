@@ -27,6 +27,11 @@ LZGraphicsView::~LZGraphicsView()
 
 void LZGraphicsView::uninit()
 {
+    if (nullptr != m_worker)
+    {
+        delete m_worker;
+        m_worker = nullptr;
+    }
     foreach (auto&& a, m_pScene->items())
     {
         qgraphicsitem_cast<Item*>(a)->setChart(nullptr);
@@ -71,6 +76,11 @@ void LZGraphicsView::createUndoView()
     m_undoView->hide();
 }
 
+int LZGraphicsView::runningCount()
+{
+    return m_worker->runningCount();
+}
+
 QWidget* LZGraphicsView::getUndoView()
 {
     return m_undoView;
@@ -83,10 +93,11 @@ void LZGraphicsView::stopTest()
 
 void LZGraphicsView::startTest()
 {
+    Item::setRunningState(true);
     QList<Item*> list;
     foreach (QGraphicsItem *gi, m_pScene->items())
     {
-        gi->setEnabled(false);
+       // gi->setEnabled(false);
         list.append(qgraphicsitem_cast<Item*>(gi));
     }
     m_worker->setList(list);
@@ -96,10 +107,11 @@ void LZGraphicsView::startTest()
 #include <QMessageBox>
 void LZGraphicsView::onTestFinish()
 {
-    foreach (QGraphicsItem *gi, m_pScene->items())
+    /*foreach (QGraphicsItem *gi, m_pScene->items())
     {
         gi->setEnabled(true);
-    }
+    }*/
+    Item::setRunningState(false);
 }
 
 
@@ -332,20 +344,11 @@ void LZGraphicsView::onRemove()
     if (nullptr == item)
         return;
 
-    QString tip = "删除";
-    if (item->getItemType() == LCType::LC_Line)
-        tip = "删除连线";
-    QMenu menu;
-    QAction *deleteActon = new QAction(tip, &menu);
-    menu.addAction(deleteActon);
-    connect(deleteActon, &QAction::triggered, this, [=]{
-        m_pScene->removeItem(item);
-        item->clear();
-        item->deleteLater();
-    });
-    menu.exec(QCursor::pos());
 
 
+    m_pScene->removeItem(item);
+    item->clear();
+    item->deleteLater();
 }
 
 
@@ -368,8 +371,8 @@ void LZGraphicsView::onAction(const Item::ActionType type)
             {
                 Item *dest = addItem(LCType::LC_Virtual, source->pos().toPoint());
                 Item *line = addItem(LCType::LC_Line, source->pos().toPoint());
-                line->setSource(source);
-                line->setDest(dest);
+                line->setSource(source, false);
+                line->setDest(dest, false);
                 connect(source, &Item::adjust, (Line*)line, &Line::onAdjust);
                 connect(dest, &Item::adjust, (Line*)line, &Line::onAdjust);
                 m_pSource = source;

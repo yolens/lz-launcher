@@ -38,10 +38,12 @@ void DragWidget::drawDrag(QDrag *drag)
 
 void DragWidget::mousePressEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     setCursor(Qt::ClosedHandCursor);
 }
 
 void DragWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+    Q_UNUSED(event);
     setCursor(Qt::OpenHandCursor);
 }

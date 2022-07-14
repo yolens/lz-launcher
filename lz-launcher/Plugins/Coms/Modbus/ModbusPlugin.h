@@ -26,7 +26,7 @@ public:
     virtual bool stopPlugin() override;
 
     //IOrder
-    virtual void execute(LOrder *order) override;
+    virtual bool execute(LOrder *order) override;
     virtual void write(QVariant value) override;
     virtual QVariant read() override;
     virtual QWidget* getWidget() override;

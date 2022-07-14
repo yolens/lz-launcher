@@ -35,6 +35,7 @@ LProduct::LProduct()
             QString cmd = ALTER_SQL_LProduct.arg(col);
             query.exec(cmd);
         }
+
     }
 }
 LProduct::~LProduct()
@@ -236,6 +237,7 @@ QList<LPoint*> LPoint::get()
     int valueId = rec.indexOf("valueId");
     int maxValue = rec.indexOf("maxValue");
     int minValue = rec.indexOf("minValue");
+    int linkId = rec.indexOf("linkId");
 
     while (query.next())
     {
@@ -249,6 +251,7 @@ QList<LPoint*> LPoint::get()
         info->valueId = query.value(valueId).toString();
         info->maxValue = query.value(maxValue);
         info->minValue = query.value(minValue);
+        info->linkId = query.value(linkId).toInt();
 
         list.push_back(info);
     }
@@ -301,6 +304,7 @@ bool LPoint::bindValue(QSqlQuery& query)
     query.bindValue(":valueId", this->valueId);
     query.bindValue(":maxValue", this->maxValue);
     query.bindValue(":minValue", this->minValue);
+    query.bindValue(":linkId", this->linkId);
     return true;
 }
 

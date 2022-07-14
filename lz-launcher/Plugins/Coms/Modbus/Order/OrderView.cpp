@@ -131,7 +131,9 @@ void OrderView::on_changeDeviceName()
 
 void OrderView::addItem()
 {
-    OrderCom *p = new OrderCom();
-    ModbusData::instance()->insert(p);
+    OrderCom *com = new OrderCom();
+    ModbusData::instance()->insert(com);
+    com->setName(QString("order%1").arg(com->id));
+    ModbusData::instance()->update(com);
     m_model->reset();
 }

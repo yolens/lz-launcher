@@ -9,6 +9,7 @@
 #include <QEventLoop>
 #include <QCoreApplication>
 #include <QGraphicsScene>
+bool Item::m_runningState = false;
 
 Item::Item(QObject *parent, LCType type)
     : QObject(parent)
@@ -40,14 +41,17 @@ void Item::clear()
         Plugin::DataCenterPlugin()->removeChart(item->getChart());
         emit item->remove();
     }
-
-    //移除所有的点
-    foreach (LPoint *p, m_pointVec)
-    {
-        Plugin::DataCenterPlugin()->removePoint(p);
-    }
     //移除自己
     Plugin::DataCenterPlugin()->removeChart(m_pChart);
+}
+
+bool Item::runningState()
+{
+    return m_runningState;
+}
+void Item::setRunningState(const bool state)
+{
+    m_runningState = state;
 }
 
 void Item::updateData()
@@ -89,7 +93,31 @@ void Item::setSize(const QSizeF& size)
     m_pChart->m_width = m_rect.width();
     m_pChart->m_height = m_rect.height();
     updateChart();
+}
 
+const LPoint* Item::nextCircuitPoint()
+{
+    foreach (const auto& p, getPointList())
+    {
+        if (p->type == LPType::circuit)
+        {
+            if (p->attribute == LPAttribute::output)
+                return p;
+        }
+    }
+    return nullptr;
+}
+const LPoint* Item::nextValuePoint()
+{
+    foreach (const auto& p, getPointList())
+    {
+        if (p->type == LPType::value)
+        {
+            if (p->attribute == LPAttribute::output)
+                return p;
+        }
+    }
+    return nullptr;
 }
 
 void Item::initTest()
@@ -108,6 +136,7 @@ bool Item::startTest()
         update();
     });
 
+    //1、等待时间
     int times = 0;
     while (true)
     {
@@ -124,6 +153,7 @@ bool Item::startTest()
         times += sec;
     }
 
+    //2、有指令时，进行通讯并赋值
     if (nullptr != m_pOrder)
     {
 
@@ -163,8 +193,23 @@ bool Item::startTest()
         item->setValueCallback(valueCallback);
 
         item->setValue(sendValue);
-        Plugin::DataCenterPlugin()->execute(item);
-        loop.exec();
+        if (!Plugin::DataCenterPlugin()->execute(item))
+            valueCallback(sendValue);
+        else
+            loop.exec();
+    }
+    //3、无指令时，赋值默认数值
+    else
+    {
+        foreach (const auto& p, m_pointVec)
+        {
+            if (p->type == LPType::value && p->attribute == LPAttribute::output)
+            {
+                p->outValue = m_pChart->m_value;
+                p->outByteType = LOrder::DEC; //默认使用十进制
+                break;
+            }
+        }
     }
 
     m_testState = TestState::Ok;
@@ -204,6 +249,15 @@ QVector<LPoint*>& Item::getPointList()
     return m_pointVec;
 }
 
+void Item::setTestingInput(const int id)
+{
+    m_testingInputId = id;
+}
+
+bool Item::isThreadStoped()
+{
+    return m_threadStoped;
+}
 
 void Item::addLine(Item *item)
 {
@@ -408,7 +462,7 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
             else
                 painter->setBrush(Chart_Value_Output_Color);
 
-
+            painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
             painter->drawText(i->rect.x(), i->rect.y() + ((i->attribute == LPAttribute::input) ? 22 : -8), i->outValue.toString());
         }
             break;
@@ -424,6 +478,20 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QRectF textRect = QRectF(0, 0, this->boundingRect().width(), 20);
     painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, m_typeName);
 
+    QFont font = painter->font();
+    QFont oldFont = font;
+    font.setPixelSize(8);
+    font.setBold(true);
+    painter->setFont(font);
+    foreach(const auto& i, m_pointVec)
+    {
+        if (i->type == LPType::circuit)
+        {
+            painter->setPen(QPen(Qt::white, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            painter->drawText(i->rect, Qt::AlignCenter, QString("P%1").arg(m_pointVec.indexOf(i)));
+        }
+    }
+    painter->setFont(oldFont);
 
 }
 
@@ -470,14 +538,21 @@ void Item::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             setSize(m_rect.size());
         }
             break;
+        case DragType::RightBottom:
+        {
+            m_rect.adjust(0, 0, point.x(), point.y());
+            setSize(m_rect.size());
+        }
+            break;
         default:
             break;
         }
 
-        scene()->update();
+
         updatePoint();
         update();
         emit adjust();
+        scene()->update();
     }
     QGraphicsItem::mouseMoveEvent(event);
 }
@@ -527,17 +602,19 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
         }
         else
         {
-            /*QString tip = "删除";
-            if (m_type == LCType::LC_Line)
-                tip = "删除连线";
-            QMenu menu;
-            QAction *deleteActon = new QAction(tip, &menu);
-            menu.addAction(deleteActon);
-            connect(deleteActon, &QAction::triggered, this, [=]{
-                emit remove();
-            });
-            menu.exec(QCursor::pos());*/
-            emit remove();
+            if (!runningState())
+            {
+                QString tip = "删除";
+                if (getItemType() == LCType::LC_Line)
+                    tip = "删除连线";
+                QMenu menu;
+                QAction *deleteActon = new QAction(tip, &menu);
+                menu.addAction(deleteActon);
+                connect(deleteActon, &QAction::triggered, this, [=]{
+                    emit remove();
+                });
+                menu.exec(QCursor::pos());
+            }
         }
     }
         break;
@@ -556,8 +633,9 @@ void Item::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
     {
         QRectF left(this->boundingRect().left(), this->boundingRect().top(), DRAG_WIDTH, this->boundingRect().height());
         QRectF top(this->boundingRect().left(), this->boundingRect().top(), this->boundingRect().width(), DRAG_WIDTH);
-        QRectF right(this->boundingRect().width()-DRAG_WIDTH, this->boundingRect().top(), DRAG_WIDTH, this->boundingRect().height());
-        QRectF bottom(this->boundingRect().left(), this->boundingRect().height()-DRAG_WIDTH, this->boundingRect().width(), DRAG_WIDTH);
+        QRectF right(this->boundingRect().width()-DRAG_WIDTH, this->boundingRect().top(), DRAG_WIDTH, this->boundingRect().height()-2*DRAG_WIDTH);
+        QRectF bottom(this->boundingRect().left(), this->boundingRect().height()-DRAG_WIDTH, this->boundingRect().width()-2*DRAG_WIDTH, DRAG_WIDTH);
+        QRectF rightBottom(this->boundingRect().width()-2*DRAG_WIDTH, this->boundingRect().height()-2*DRAG_WIDTH, this->boundingRect().width(), 2*DRAG_WIDTH);
         setFlag(ItemIsMovable, false);
         if (left.contains(event->pos()))
         {
@@ -579,12 +657,19 @@ void Item::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
             m_dragType = DragType::Bottom;
             setCursor(Qt::SizeVerCursor);
         }
+        else if (rightBottom.contains(event->pos()))
+        {
+            m_dragType = DragType::RightBottom;
+            setCursor(Qt::SizeFDiagCursor);
+        }
         else
         {
             setFlag(ItemIsMovable);
             m_dragType = DragType::Center;
             setCursor(Qt::ArrowCursor);
         }
+
+
     }
 
     QGraphicsItem::hoverMoveEvent(event);

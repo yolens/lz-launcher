@@ -29,6 +29,10 @@ private:
     void createDockWindows();
     void createMenus();
     void createToolbars();
+protected:
+    virtual void closeEvent(QCloseEvent* event) override;
+signals:
+    void destroyWindow();
 private:
     Ui::LZWindow *ui;
     LZGraphicsView *m_pView = nullptr;

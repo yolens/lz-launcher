@@ -26,6 +26,12 @@ public:
         StopResult,
     };
 
+    enum Action
+    {
+        Create_action = 0,
+        Connect_action,
+        Send_action,
+    };
 
     struct DeviceInfo
     {
@@ -43,20 +49,23 @@ public:
     void actionDataStop();
     void addIn(LOrder* order);
 
+    void createDevice();
+    void connectDevice(const DeviceWorker::DeviceInfo& info);
+
 private:
     void write(LOrder* order);
     QModbusDataUnit WriteReadRequest(LOrder* order) const;
-
     void read(LOrder* order);
-
     LOrder* takeOut();
+
+    void createAction();
+    void connectAction(const DeviceWorker::DeviceInfo& info);
+    void sendAction();
 public slots:
     void on_errorOccurred(QModbusDevice::Error error);
     void on_stateChanged(QModbusDevice::State state);
     void on_read_ready();
-    void on_create_device();
-    void on_connect_device(const DeviceWorker::DeviceInfo& info);
-    void on_action_data();
+    void on_start_work();
 signals:
     void message(const QString& msg);
     void result(const int code);
@@ -70,6 +79,8 @@ private:
     QQueue<LOrder*> m_queue;
     QMutex m_mutex;
     QSemaphore m_sem;
+    Action m_action = Action::Send_action;
+    DeviceWorker::DeviceInfo m_info;
 };
 
 #endif // DEVICEWORKER_H

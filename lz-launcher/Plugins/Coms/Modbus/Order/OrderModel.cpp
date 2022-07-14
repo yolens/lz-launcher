@@ -64,7 +64,7 @@ void OrderModel::updateDevice()
     QList<LDevice*>* list = ModbusData::instance()->deviceList();
     for (int i = 0; i<list->count(); i++)
     {
-        QString name = QString("%1(%2)").arg(list->value(i)->name()).arg(list->value(i)->id);
+        QString name = QString("%1").arg(list->value(i)->name());
         stringList.append(name);
         m_deviceIdMap.insert(list->value(i)->id, name);
     }

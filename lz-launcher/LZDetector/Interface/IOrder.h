@@ -5,7 +5,7 @@
 class IOrder
 {
 public:
-    virtual void execute(LOrder *order) = 0; //执行
+    virtual bool execute(LOrder *order) = 0; //执行
     virtual void write(QVariant value) = 0; //写入值
     virtual QVariant read() = 0; //获取值
     virtual QWidget* getWidget() = 0; //获取编辑窗口

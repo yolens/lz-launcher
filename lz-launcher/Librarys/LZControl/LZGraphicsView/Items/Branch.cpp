@@ -23,21 +23,47 @@ Item::FunctionType Branch::witchFunction()
     return FunctionType::ValueTrigger_func;
 }
 
-const LPoint* Branch::startTest(const QVariant& value)
+const LPoint* Branch::startTest(const QVariant& value, const LOrder::ByteType type)
 {
     m_testState = TestState::Testing;
 
     QTimer::singleShot(0, this, [=]{
         update();
     });
+
+    QVariant u64 = LZLib::instance()->toLonglong(type, value);
+
     foreach(const auto& p, m_pointVec)
     {
         if (p->type == LPType::circuit && p->attribute == LPAttribute::output)
         {
-            qInfo() << "DDDD= " << p->minValue << value << p->maxValue;
-            qInfo() << "DDDD2= " << p->minValue.toLongLong() << value.toLongLong() << p->maxValue.toLongLong();
-            if (p->minValue.toLongLong() <= value.toLongLong() && p->maxValue.toLongLong() >= value.toLongLong())
+            LOrder::ByteType bt = LOrder::DEC;
+            if (p->minValue.toString().contains("."))
+                bt = LOrder::Float;
+            if (LOrder::DEC == bt)
+            {
+                qlonglong mid = LZLib::instance()->fromLonglong(LOrder::DEC, u64).toLongLong();
+                //qInfo() << "DDDD dec= " << p->minValue << mid << p->maxValue;
+                if (p->minValue.toLongLong() <= mid && p->maxValue.toLongLong() >= mid)
+                {
+                    return p;
+                }
+            }
+            else
+            {
+                float mid = LZLib::instance()->fromLonglong(LOrder::Float, u64).toFloat();
+                //qInfo() << "DDDD float= " << p->minValue << mid << p->maxValue;
+                if (p->minValue.toFloat() <= mid && p->maxValue.toFloat() >= mid)
+                {
+                    return p;
+                }
+            }
+
+            /*if (p->minValue.toLongLong() <= value.toLongLong() && p->maxValue.toLongLong() >= value.toLongLong())
+            {
+                qInfo() << "DDDD2= " << p->minValue.toLongLong() << value.toLongLong() << p->maxValue.toLongLong();
                 return p;
+            }*/
         }
     }
     return nullptr;
@@ -141,7 +167,7 @@ void Branch::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 {
     Item::paint(painter, option, widget);
 
-    foreach(const auto& i, m_pointVec)
+    /*foreach(const auto& i, m_pointVec)
     {
         if (i->type == LPType::circuit && i->attribute == LPAttribute::output)
         {
@@ -149,6 +175,6 @@ void Branch::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
             QRect pointRect(i->rect.x()-20, i->rect.top(), 20, i->rect.bottom());
             painter->drawText(pointRect, Qt::AlignHCenter | Qt::AlignRight, QString("P%1").arg(m_pointVec.indexOf(i)));
         }
-    }
+    }*/
 
 }

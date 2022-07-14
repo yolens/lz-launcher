@@ -9,10 +9,10 @@
 #pragma execution_character_set("utf-8")
 #endif
 
-const int POINT_SIZE = 10;
-const int POINT_EDGE = 3;
+const int POINT_SIZE = 14;
+const int POINT_EDGE = 4;
 const int POINT_BIG_SIZE = 30;
-const int DRAG_WIDTH = 3;
+const int DRAG_WIDTH = 2;
 
 class Item : public QObject, public QGraphicsItem
 {
@@ -55,6 +55,7 @@ public:
         Top,
         Bottom,
         Center,
+        RightBottom,
     };
 
     enum FunctionType
@@ -67,6 +68,9 @@ public:
     explicit Item(QObject *parent = nullptr, LCType type = LC_None);
     virtual ~Item();
 
+    static bool runningState();
+    static void setRunningState(const bool state);
+
     void updateData();
     LCType getItemType();
     QString& getTypeName();
@@ -77,13 +81,17 @@ public:
     LChart* getChart();
     LOrder* getOrder();
     QVector<LPoint*>& getPointList();
+    void setTestingInput(const int id);
+    bool isThreadStoped();
 
     void initTest(); //初始化测试
     virtual bool startTest(); //开始检测
-    virtual const LPoint* startTest(const QVariant& value){Q_UNUSED(value); return nullptr;};
+    virtual const LPoint* startTest(const QVariant& value, const LOrder::ByteType type){Q_UNUSED(value); Q_UNUSED(type); return nullptr;};
     virtual void testing(std::function<void(Item *p)> cb){Q_UNUSED(cb);};
     virtual Item::FunctionType witchFunction(){return FunctionType::Nromal_func;};
     virtual void mouseRightClick(const LPoint* p){Q_UNUSED(p);};
+    virtual const LPoint* nextCircuitPoint();
+    virtual const LPoint* nextValuePoint();
 
     Item::ActionType actionType();
     int getCurrentPointId();
@@ -91,8 +99,8 @@ public:
     void addLine(Item *item);
 
     virtual void clear();
-    virtual void setSource(Item *item){Q_UNUSED(item);};
-    virtual void setDest(Item *item){Q_UNUSED(item);};
+    virtual void setSource(Item *item, const bool adjust = true){Q_UNUSED(item); Q_UNUSED(adjust);};
+    virtual void setDest(Item *item, const bool adjust = true){Q_UNUSED(item); Q_UNUSED(adjust);};
     virtual Item* getSource(){return nullptr;};
     virtual Item* getDest(){return nullptr;};
     virtual void createPoint(){};
@@ -141,7 +149,10 @@ private:
     bool m_bDrawRect = false;
     DragType m_dragType = DragType::Release;
     QPointF m_startPos;
+    int m_testingInputId = 0;
+    bool m_threadStoped = false;
 
+    static bool m_runningState;
 };
 
 #endif // ITEM_H

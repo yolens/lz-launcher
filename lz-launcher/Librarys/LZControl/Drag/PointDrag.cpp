@@ -1,9 +1,9 @@
 ﻿#include "PointDrag.h"
 
-PointDrag::PointDrag(QWidget *parent) : DragWidget(parent)
+PointDrag::PointDrag(const LPType type, const LPAttribute attri, QWidget *parent) : DragWidget(parent)
 {
-    m_type = LPType::circuit;
-    m_attribute = LPAttribute::output;
+    m_type = type;
+    m_attribute = attri;
 }
 
 #include <QMimeData>

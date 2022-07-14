@@ -54,7 +54,7 @@ public:
     virtual bool removePoint(LPoint* p) override;
 
 
-    virtual void execute(LOrder* p) override;
+    virtual bool execute(LOrder* p) override;
     virtual QMap<LOrder::Type, QList<LOrder*>>& getOrderList() override;
     virtual LOrder* newOrder(LOrder* p) override;
     virtual LOrder* getOrder(const int id, const int type) override;

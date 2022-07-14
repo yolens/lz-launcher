@@ -32,7 +32,7 @@ class PointDrag : public DragWidget
 {
     Q_OBJECT
 public:
-    explicit PointDrag(QWidget *parent = nullptr);
+    explicit PointDrag(const LPType type, const LPAttribute attri, QWidget *parent = nullptr);
 
 
 protected:

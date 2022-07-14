@@ -63,8 +63,8 @@ bool ModbusPlugin::stopPlugin()
     }
     return true;
 }
-
-void ModbusPlugin::execute(LOrder *order)
+#include <QDebug>
+bool ModbusPlugin::execute(LOrder *order)
 {
     QList<LDevice*> *list =  ModbusData::instance()->deviceList();
     if (nullptr != list)
@@ -73,13 +73,13 @@ void ModbusPlugin::execute(LOrder *order)
         {
             if (order->deviceId() == list->at(i)->id)
             {
-                list->at(i)->execute(order);
-                break;
+                return list->at(i)->execute(order);
+
             }
         }
 
     }
-
+    return false;
 }
 
 QMap<LDevice::DeviceState, int> ModbusPlugin::deviceStateList()

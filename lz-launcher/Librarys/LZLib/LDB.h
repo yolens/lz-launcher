@@ -64,6 +64,7 @@ const auto ALTER_SQL_LProduct = QLatin1String(R"(
     alter table %1 add %2
     )").arg(Table_LProduct).arg("%1");
 
+
 const auto INSERT_SQL_LProduct = QLatin1String(R"(
     insert into %1(
                       name
@@ -352,7 +353,7 @@ public:
     virtual void setStartAddress(const int value){Q_UNUSED(value);};
     virtual void setNumberOfValues(const int value){Q_UNUSED(value);};
 
-    virtual void execute(){};
+    virtual bool execute(){return false;};
     virtual void write(){};
 
     void setValueCallback(std::function<void(const QVariant value)> cb) {m_valueCallback = cb;};
@@ -364,7 +365,7 @@ private:
     QVariant        m_value;
     int             m_deviceId; //设备id
     RWType          m_rwType = RWType::Write;
-    ByteType        m_byteType = ByteType::HEX;
+    ByteType        m_byteType = ByteType::DEC;
 
     std::function<void(const QVariant value)> m_valueCallback = nullptr;
 
@@ -407,7 +408,7 @@ public:
     virtual void setStopBits(const QString& value){Q_UNUSED(value);};
     virtual void setUseEnable(const bool value){Q_UNUSED(value);};
 
-    virtual void execute(LOrder* order) = 0;
+    virtual bool execute(LOrder* order) = 0;
     virtual DeviceState deviceState() = 0;
 private:
     LOrder::Type    m_type;
@@ -446,8 +447,9 @@ public:
     int             max = 1;
     int             chartId = 0; //父亲容器
     QString         valueId; //对应值的入口
-    QVariant        maxValue = 0;
+    QVariant        maxValue = 0;  //判断区间，用于Branch Item
     QVariant        minValue = 0;
+    int             linkId = 0; //点与点的联通，用于线程Thread Item
 
     QRect           rect;
     int             count = 0;
@@ -465,6 +467,7 @@ const auto CREATE_SQL_LPoint = QLatin1String(R"(
         , valueId varchar
         , maxValue varchar
         , minValue varchar
+        , linkId integer
     ))").arg(Table_LPoint);
 
 const QVector<QString> ALTER_LPoint_LIST = {
@@ -476,6 +479,7 @@ const QVector<QString> ALTER_LPoint_LIST = {
     {"valueId varchar"},
     {"maxValue varchar"},
     {"minValue varchar"},
+    {"linkId integer"},
 };
 const auto ALTER_SQL_LPoint = QLatin1String(R"(
     alter table %1 add %2
@@ -491,6 +495,7 @@ const auto UPDATE_SQL_LPoint = QLatin1String(R"(
                     , valueId=:valueId
                     , maxValue=:maxValue
                     , minValue=:minValue
+                    , linkId=:linkId
     where id=:id
     )").arg(Table_LPoint);
 
@@ -504,6 +509,7 @@ const auto INSERT_SQL_LPoint = QLatin1String(R"(
                     , valueId
                     , maxValue
                     , minValue
+                    , linkId
                   )
             values(
                       :name
@@ -514,6 +520,7 @@ const auto INSERT_SQL_LPoint = QLatin1String(R"(
                     , :valueId
                     , :maxValue
                     , :minValue
+                    , :linkId
                   )
     )").arg(Table_LPoint);
 

@@ -7,24 +7,30 @@ class Line : public Item
 {
     Q_OBJECT
 public:
+    enum MyPolyType
+    {
+        Draw = 0,
+        Area,
+    };
+public:
     explicit Line(QObject *parent = nullptr);
     virtual ~Line();
 
     virtual void clear() override;
-    virtual void setSource(Item *item) override;
-    virtual void setDest(Item *item) override;
+    virtual void setSource(Item *item, const bool adjust = true) override;
+    virtual void setDest(Item *item, const bool adjust = true) override;
     virtual Item* getSource() override;
     virtual Item* getDest() override;
     virtual bool startTest() override;
 private:
     void adjustLine();
-    void setPolygon();
+    QPolygonF getPolygon(const MyPolyType type) const;
 public:
     virtual QRectF boundingRect() const override;
 protected:
     virtual QPainterPath shape() const override;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    //virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+
 public slots:
     void onAdjust();
 signals:
@@ -35,7 +41,6 @@ private:
     QPointF m_sourcePoint;
     QPointF m_destPoint;
 
-    QPolygonF m_drawPolygon;
 };
 
 #endif // LINE_H

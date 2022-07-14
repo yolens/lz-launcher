@@ -35,10 +35,11 @@ void Line::clear()
         p->outValue.clear();
         qInfo() << "YY2----------------------" << p->count;
     }
+
     emit removeLine();
 }
 
-void Line::setSource(Item *item)
+void Line::setSource(Item *item, const bool adjust)
 {
     m_pSource = item;
     if (nullptr == item)
@@ -48,12 +49,13 @@ void Line::setSource(Item *item)
     if (p)
         p->count++;
     item->addLine(this);
-    onAdjust();
+    if (adjust)
+        onAdjust();
     updateChart();
 
 
 }
-void Line::setDest(Item *item)
+void Line::setDest(Item *item, const bool adjust)
 {
     m_pDest = item;
     if (nullptr == item)
@@ -63,7 +65,8 @@ void Line::setDest(Item *item)
     if (p)
         p->count++;
     item->addLine(this);
-    onAdjust();
+    if (adjust)
+        onAdjust();
     updateChart();
 
 
@@ -114,14 +117,13 @@ void Line::adjustLine()
         m_sourcePoint = m_destPoint = line.p1();
     }
 
-    setPolygon();
     update();
 }
 
 QPainterPath Line::shape() const
 {
     QPainterPath path;
-    path.addPolygon(m_drawPolygon);
+    path.addPolygon(getPolygon(MyPolyType::Area));
     return path;
 }
 
@@ -138,7 +140,7 @@ QRectF Line::boundingRect() const
         .normalized()
         .adjusted(-extra, -extra, extra, extra);*/
     QPainterPath path;
-    path.addPolygon(m_drawPolygon);
+    path.addPolygon(getPolygon(MyPolyType::Area));
     return path.boundingRect();
 }
 
@@ -149,20 +151,49 @@ bool Line::startTest()
     return true;
 }
 
-void Line::setPolygon()
+QPolygonF Line::getPolygon(const MyPolyType type) const
 {
     QLineF line(m_sourcePoint, m_destPoint);
+    if (qFuzzyCompare(line.length(), qreal(0.)))
+        return QPolygonF();
+
+    qreal arrowSize = 10;
+    //QLineF line(m_sourcePoint, m_destPoint);
     double angle = std::atan2(-line.dy(), line.dx());
 
-    QPointF destArrowP1 = m_destPoint + QPointF(sin(angle - M_PI / 3) * 6,
-                                              cos(angle - M_PI / 3) * 6);
-    QPointF destArrowP2 = m_destPoint + QPointF(sin(angle - M_PI + M_PI / 3) * 6,
-                                              cos(angle - M_PI + M_PI / 3) * 6);
-
     QPolygonF py;
-    py << line.p1() << line.p2() << destArrowP1 << destArrowP2 << line.p2();
-    m_drawPolygon = py;
+    if (type == MyPolyType::Draw)
+    {
+        QPointF destArrowP1 = m_destPoint + QPointF(sin(angle - M_PI / 3) * arrowSize,
+                                                      cos(angle - M_PI / 3) * arrowSize);
+        QPointF destArrowP2 = m_destPoint + QPointF(sin(angle - M_PI + M_PI / 3) * arrowSize,
+                                                  cos(angle - M_PI + M_PI / 3) * arrowSize);
+
+        py << line.p1() << line.p2() << destArrowP1 << destArrowP2 << line.p2();
+    }
+    else
+    {
+        QPointF sourceArrowP1 = m_sourcePoint + QPointF(sin(angle - M_PI / 3) * arrowSize,
+                                                      cos(angle - M_PI / 3) * arrowSize);
+        QPointF sourceArrowP2 = m_sourcePoint + QPointF(sin(angle - M_PI + M_PI / 3) * arrowSize,
+                                                      cos(angle - M_PI + M_PI / 3) * arrowSize);
+
+        QPointF destArrowP1 = m_destPoint + QPointF(sin(angle + M_PI / 3) * arrowSize,
+                                                  cos(angle + M_PI / 3) * arrowSize);
+        QPointF destArrowP2 = m_destPoint + QPointF(sin(angle + M_PI - M_PI / 3) * arrowSize,
+                                                  cos(angle + M_PI - M_PI / 3) * arrowSize);
+
+        py << sourceArrowP1 << destArrowP1 << destArrowP2 << sourceArrowP2;
+    }
+
+    //if (type == MyPolyType::Draw)
+    //    py << line.p1() << line.p2() << destArrowP1 << destArrowP2 << line.p2();
+   // else
+        //py << sourceArrowP1 << destArrowP1 << destArrowP2 << sourceArrowP2;
+    //py << sourceArrowP1 << sourceArrowP2 << line.p1() << line.p2() << destArrowP1 << destArrowP2;
+    return py;
 }
+
 
 void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
@@ -174,7 +205,7 @@ void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     //if (qFuzzyCompare(line.length(), qreal(0.)))
     //    return;
 
-    QColor bgColor = Qt::white;
+    QColor bgColor = Qt::gray;
     switch (m_testState)
     {
     case TestState::Normal:
@@ -194,28 +225,10 @@ void Line::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     // Draw the line itself
     painter->setPen(QPen(bgColor, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    //painter->drawLine(line);
-
-
-    // Draw the arrows
-    /*double angle = std::atan2(-line.dy(), line.dx());
-
-    QPointF destArrowP1 = m_destPoint + QPointF(sin(angle - M_PI / 3) * 6,
-                                              cos(angle - M_PI / 3) * 6);
-    QPointF destArrowP2 = m_destPoint + QPointF(sin(angle - M_PI + M_PI / 3) * 6,
-                                              cos(angle - M_PI + M_PI / 3) * 6);*/
 
     painter->setBrush(bgColor);
 
-    //m_arrowHead.clear();
-    //m_arrowHead << line.p1() << line.p2() << destArrowP1 << destArrowP2 << line.p2();
-   // painter->drawLine(line);
-    painter->drawPolyline(m_drawPolygon);
-   // m_arrowHead << line.p1();
-}
-/*
-void Line::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
+    painter->drawPolyline(getPolygon(MyPolyType::Draw));
 
-    QGraphicsItem::mousePressEvent(event);
-}*/
+}
+

@@ -87,45 +87,14 @@ void DeviceView::adjustView()
         wList.append(dynamic_cast<DeviceCom*>(b));
     }
     ui->srollArea_device->view(wList);
-
-    /*int number = qMax(1, ui->scrollAreaWidgetContents->width()/ITEM_WIDTH);
-    int edge = 10;
-    int spacing = 20;
-    int x = 0;
-    int y = edge;
-    int w = (ui->scrollAreaWidgetContents->width()-number*edge-spacing)/number;
-    int h = 0;
-    for (int i = 0; i<list->count(); i++)
-    {
-        DeviceCom *com = (DeviceCom*)list->value(i);
-        com->show();
-        com->adjustSize();
-        h = com->height();
-        com->resize(w, h);
-
-        if (i%number == 0)
-        {
-            x = edge;
-            if (0 != i)
-                y += h+spacing;
-        }
-        else
-        {
-            x += w+spacing;
-        }
-        com->move(x,y);
-        com->show();
-
-    }
-
-    y += h+spacing;
-    ui->scrollAreaWidgetContents->setFixedHeight(y);*/
 }
 
 void DeviceView::on_pushButton_add_clicked()
 {
     DeviceCom *com = new DeviceCom();
     ModbusData::instance()->insert(com);
+    com->setName(QString("device%1").arg(com->id));
+    ModbusData::instance()->update(com);
 
     initCom(com);
     adjustView();

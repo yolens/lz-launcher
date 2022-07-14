@@ -24,6 +24,7 @@ public:
     Item* addItem(const LCType type);
     Item* addItem(const LCType type, const QPoint& pt);
     QWidget* getUndoView();
+    int runningCount();
 private:
     void init();
     void uninit();

@@ -26,7 +26,7 @@ private:
     void addProductCard(LProduct* p);
     void addUnitCard(LUnit* p);
 
-
+    void createWindow();
 private:
     Ui::ProductMgrFrom *ui;
 

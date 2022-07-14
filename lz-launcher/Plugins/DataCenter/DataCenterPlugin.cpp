@@ -130,12 +130,22 @@ bool DataCenterPlugin::removeProduct(LProduct* p)
 {
     if (nullptr == p)
         return false;
-    //1、先删除产品下的子单元
+    //1、删除子单元
     foreach(const auto& u, getUnitList(p->id))
     {
+        //2、删除Chart
+        foreach(const auto& c, getChartList(p->id))
+        {
+            //3、删除点
+            foreach(const auto&p, getPointList(c->id))
+            {
+                removePoint(p);
+            }
+            removeChart(c);
+        }
         removeUnit(u);
     }
-    //2、删除产品本身
+    //4、删除产品本身
     if (p->removeDb())
     {
         m_chartList.remove(p->id);
@@ -192,6 +202,17 @@ bool DataCenterPlugin::removeUnit(LUnit* p)
 {
     if (nullptr == p)
         return false;
+    //1、删除Chart
+    foreach(const auto& c, getChartList(p->id))
+    {
+        //2、删除点
+        foreach(const auto&p, getPointList(c->id))
+        {
+            removePoint(p);
+        }
+        removeChart(c);
+    }
+    //3、删除自己
     if (p->removeDb())
     {
         m_unitList.remove(p->id);
@@ -255,6 +276,13 @@ bool DataCenterPlugin::removeChart(LChart* p)
 {
     if (nullptr == p)
         return false;
+
+    //1、删除点
+    foreach(const auto&p, getPointList(p->id))
+    {
+        removePoint(p);
+    }
+    //3、删除自己
     if (p->removeDb())
     {
         m_chartList.remove(p->id);
@@ -303,10 +331,10 @@ QMap<LOrder::Type, QList<LOrder*>>& DataCenterPlugin::getOrderList()
     return m_orderMap;
 }
 
-void DataCenterPlugin::execute(LOrder* p)
+bool DataCenterPlugin::execute(LOrder* p)
 {
     if (nullptr == p)
-        return;
+        return false;
     QList<IPlugin*> list = Plugin::Manager()->getPluginsByType(IPlugin::Coms);
     foreach (IPlugin *plugin, list)
     {
@@ -315,13 +343,12 @@ void DataCenterPlugin::execute(LOrder* p)
         {
             if (p->type() == orderPlugin->type())
             {
-                orderPlugin->execute(p);
-                break;
+                return orderPlugin->execute(p);
             }
 
         }
     }
-
+    return false;
 }
 
 LOrder* DataCenterPlugin::newOrder(LOrder* p)

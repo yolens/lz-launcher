@@ -10,11 +10,7 @@ Branch::Branch(QObject *parent)
 #include <QTimer>
 bool Branch::startTest()
 {
-    m_testState = TestState::Testing;
-
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Testing);
     return true;
 }
 #include <QDebug>
@@ -25,11 +21,7 @@ Item::FunctionType Branch::witchFunction()
 
 const LPoint* Branch::startTest(const QVariant& value, const LOrder::ByteType type)
 {
-    m_testState = TestState::Testing;
-
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Testing);
 
     QVariant u64 = LZLib::instance()->toLonglong(type, value);
 

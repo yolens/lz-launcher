@@ -54,6 +54,53 @@ void Item::setRunningState(const bool state)
     m_runningState = state;
 }
 
+void Item::updateTestingState(const TestState state)
+{
+    m_testState = state;
+    QTimer::singleShot(0, this, [=]{
+        update();
+    });
+}
+
+void Item::addLineCount(const int id)
+{
+    if (m_pointLineCountMap.contains(id))
+        m_pointLineCountMap[id] ++;
+    else
+        m_pointLineCountMap[id] = 1;
+}
+void Item::removeLineCount(const int id)
+{
+    if (m_pointLineCountMap.contains(id))
+        m_pointLineCountMap[id] --;
+}
+
+int Item::getLineCount(const int id)
+{
+    if (m_pointLineCountMap.contains(id))
+        return m_pointLineCountMap.value(id);
+    return 0;
+}
+
+void Item::waitDelayTime()
+{
+    int times = 0;
+    while (true)
+    {
+        int sec = qMin(500, m_pChart->m_delay-times);
+        if (sec <= 0)
+            break;
+        QThread::msleep(sec);
+        m_testingTimes++;
+        m_bDrawRect = (m_testingTimes%2 != 0);
+        QTimer::singleShot(0, this, [=]{
+            update();
+        });
+        QCoreApplication::processEvents();
+        times += sec;
+    }
+}
+
 void Item::updateData()
 {
     Plugin::DataCenterPlugin()->updateChart(m_pChart);
@@ -122,67 +169,51 @@ const LPoint* Item::nextValuePoint()
 
 void Item::initTest()
 {
-    m_testState = TestState::Normal;
     m_testingTimes = 0;
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Normal);
 }
 
 bool Item::startTest()
 {
-    m_testState = TestState::Testing;
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Testing);
 
-    //1、等待时间
-    int times = 0;
-    while (true)
+    QVariant inValue;
+    LOrder::ByteType inByteType = LOrder::DEC;
+
+    //获取外部传输的值
+    foreach (const auto& p, m_pointVec)
     {
-        int sec = qMin(1000, m_pChart->m_delay-times);
-        if (sec <= 0)
+        if (p->type == LPType::value && p->attribute == LPAttribute::input)
+        {
+            inValue = p->transferData.outValue;
+            inByteType = p->transferData.inByteType;
             break;
-        QThread::msleep(sec);
-        m_testingTimes++;
-        m_bDrawRect = (m_testingTimes%2 != 0);
-        QTimer::singleShot(0, this, [=]{
-            update();
-        });
-        QCoreApplication::processEvents();
-        times += sec;
+        }
+    }
+    //若没有外部值，使用内部设定值
+    if (inValue.isNull())
+    {
+        inValue = m_pChart->m_value;
     }
 
     //2、有指令时，进行通讯并赋值
     if (nullptr != m_pOrder)
     {
-
         QEventLoop loop;
         connect(this, &Item::finished, &loop, &QEventLoop::quit);
         LOrder *item = Plugin::DataCenterPlugin()->newOrder(m_pOrder);
 
-        QVariant sendValue;
-        foreach (const auto& p, m_pointVec)
-        {
-            if (p->type == LPType::value && p->attribute == LPAttribute::input)
-            {
-                sendValue = p->outValue;
-                break;
-            }
-        }
-        if (sendValue.isNull())
-        {
-            sendValue = m_pChart->m_value;
-        }
-
-        std::function<void(const QVariant value)> valueCallback = [=](const QVariant value)
+        std::function<void(const LZ::ComData& data)> valueCallback = [=](const LZ::ComData& data)
         {
             foreach (const auto& p, m_pointVec)
             {
                 if (p->type == LPType::value && p->attribute == LPAttribute::output)
                 {
-                    p->outValue = value;
-                    p->outByteType = item->byteType();
+                    // 设置传输给外部的值
+                    p->transferData.outValue = data.value;
+                    p->transferData.outByteType = item->byteType();
+                    p->transferData.inValue = inValue;
+                    p->transferData.inByteType = inByteType;
                     break;
                 }
             }
@@ -192,9 +223,13 @@ bool Item::startTest()
 
         item->setValueCallback(valueCallback);
 
-        item->setValue(sendValue);
+        item->setValue(inValue);
         if (!Plugin::DataCenterPlugin()->execute(item))
-            valueCallback(sendValue);
+        {
+            LZ::ComData data;
+            data.value = inValue;
+            valueCallback(data);
+        }
         else
             loop.exec();
     }
@@ -205,19 +240,20 @@ bool Item::startTest()
         {
             if (p->type == LPType::value && p->attribute == LPAttribute::output)
             {
-                p->outValue = m_pChart->m_value;
-                p->outByteType = LOrder::DEC; //默认使用十进制
+                p->transferData.outValue = m_pChart->m_value;
+                p->transferData.outByteType = LOrder::DEC; //默认使用十进制
+                p->transferData.inValue = inValue;
+                p->transferData.inByteType = inByteType;
                 break;
             }
         }
     }
 
-    m_testState = TestState::Ok;
+    //1、等待时间
+    waitDelayTime();
 
     m_bDrawRect = false;
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Ok);
     return true;
 }
 
@@ -463,7 +499,7 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                 painter->setBrush(Chart_Value_Output_Color);
 
             painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-            painter->drawText(i->rect.x(), i->rect.y() + ((i->attribute == LPAttribute::input) ? 22 : -8), i->outValue.toString());
+            painter->drawText(i->rect.x(), i->rect.y() + ((i->attribute == LPAttribute::input) ? 22 : -8), i->transferData.outValue.toString());
         }
             break;
         default:
@@ -483,13 +519,19 @@ void Item::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     font.setPixelSize(8);
     font.setBold(true);
     painter->setFont(font);
+    painter->setPen(QPen(Qt::white, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    QString name;
     foreach(const auto& i, m_pointVec)
     {
         if (i->type == LPType::circuit)
         {
-            painter->setPen(QPen(Qt::white, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-            painter->drawText(i->rect, Qt::AlignCenter, QString("P%1").arg(m_pointVec.indexOf(i)));
+            name = QString("P%1").arg(m_pointVec.indexOf(i));
         }
+        else
+        {
+            name = QString("V%1").arg(m_pointVec.indexOf(i));
+        }
+        painter->drawText(i->rect, Qt::AlignCenter, name);
     }
     painter->setFont(oldFont);
 
@@ -585,8 +627,10 @@ void Item::mousePressEvent(QGraphicsSceneMouseEvent *event)
         {
             m_action = ActionType::ActionLine;
             m_currentPointId = lp->id;
-            qInfo() << "QQQQQQ= " << lp->count << lp->max;
-            if (lp->max == 0 || lp->count < lp->max)
+            //qInfo() << "QQQQQQ= " << lp->count << lp->max;
+            //if (lp->max == 0 || lp->count < lp->max)
+            qInfo() << "QQQQQQ= " << getLineCount(lp->id) << lp->max;
+            if (lp->max == 0 || getLineCount(lp->id) < lp->max)
                 emit action(m_action);
             break;
         }

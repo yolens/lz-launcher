@@ -189,18 +189,20 @@ void ChartDlg::updateView()
 
         foreach(const auto& p, m_item->getPointList())
         {
-            if (p->type == LPType::circuit && p->attribute == LPAttribute::input)
-            {
-                spinBox = new QSpinBox(this);
-                spinBox->setRange(1, std::numeric_limits<int>::max());
-                spinBox->setValue(p->max);
-                connect(spinBox, &QSpinBox::editingFinished, this, [=]{
-                    spinBox->setValue(qMax(p->count, spinBox->value()));
-                });
-                setValueCB = [=]{p->max = spinBox->value();};
-                m_valueSetList.push_back(setValueCB);
-                addItem(grid, QString("最大元素连接数(P%1):").arg(m_item->getPointList().indexOf(p)), spinBox);
-            }
+            spinBox = new QSpinBox(this);
+            spinBox->setRange(1, std::numeric_limits<int>::max());
+            spinBox->setValue(p->max);
+            connect(spinBox, &QSpinBox::editingFinished, this, [=]{
+                //spinBox->setValue(qMax(p->count, spinBox->value()));
+                spinBox->setValue(qMax(m_item->getLineCount(p->id), spinBox->value()));
+            });
+            setValueCB = [=]{p->max = spinBox->value();};
+            m_valueSetList.push_back(setValueCB);
+
+            if (p->type == LPType::circuit)
+               addItem(grid, QString("最大元素连接数(P%1):").arg(m_item->getPointList().indexOf(p)), spinBox);
+            else
+               addItem(grid, QString("最大元素连接数(V%1):").arg(m_item->getPointList().indexOf(p)), spinBox);
         }
 
     }

@@ -7,6 +7,7 @@
 #include "Items/Finish.h"
 #include "Items/Thread.h"
 #include "Items/Branch.h"
+#include "Items/Panel.h"
 #include "IPlugin.h"
 #include <QUndoView>
 #include <QUndoStack>
@@ -85,10 +86,21 @@ QWidget* LZGraphicsView::getUndoView()
 {
     return m_undoView;
 }
-
+#include <QEventLoop>
+#include <QDialog>
 void LZGraphicsView::stopTest()
 {
-    m_worker->stopTest();
+    if (runningCount() > 0)
+    {
+        QDialog dlg;
+        connect(m_worker, &DetectWorker::testFinished, &dlg, &QDialog::close);
+        //QEventLoop loop;
+        //connect(m_worker, &DetectWorker::testFinished, &loop, &QEventLoop::quit);
+        m_worker->stopTest();
+        //loop.exec();
+        dlg.exec();
+    }
+    //m_worker->stopTest();
 }
 
 void LZGraphicsView::startTest()
@@ -192,6 +204,9 @@ Item* LZGraphicsView::addItem(const LCType type)
         break;
     case LCType::LC_Branch:
         item = new Branch();
+        break;
+    case LCType::LC_Panel:
+        item = new ControlPanel();
         break;
     default:
         break;

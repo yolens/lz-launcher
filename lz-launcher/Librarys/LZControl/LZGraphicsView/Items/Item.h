@@ -25,6 +25,7 @@ class Item : public QObject, public QGraphicsItem
     friend class Line;
     friend class Thread;
     friend class Branch;
+    friend class ControlPanel;
 public:
     enum ActionType {
         ActionNormal,
@@ -83,6 +84,11 @@ public:
     QVector<LPoint*>& getPointList();
     void setTestingInput(const int id);
     bool isThreadStoped();
+    void updateTestingState(const TestState state);
+    void waitDelayTime();
+    void addLineCount(const int id);
+    void removeLineCount(const int id);
+    int getLineCount(const int id);
 
     void initTest(); //初始化测试
     virtual bool startTest(); //开始检测
@@ -138,6 +144,7 @@ private:
 
     int m_currentPointId = 0;
     QVector<LPoint*> m_pointVec;
+    QMap<int, int> m_pointLineCountMap;
     QRectF m_rect;
 
     LOrder *m_pOrder = nullptr;

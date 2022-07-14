@@ -156,6 +156,7 @@ public:
     bool bindValue(QSqlQuery& query);
 private:
     void changeDeviceState(const LDevice::DeviceState state);
+    void saveConfig();
 protected:
     virtual void paintEvent(QPaintEvent * event) override;
 signals:
@@ -168,8 +169,6 @@ private slots:
     void on_message(const QString& msg);
 
     void on_pushButton_connect_clicked();
-
-    void on_pushButton_save_clicked();
 
     void on_pushButton_delete_clicked();
 

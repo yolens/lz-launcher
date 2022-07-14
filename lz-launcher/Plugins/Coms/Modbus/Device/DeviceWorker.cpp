@@ -81,30 +81,41 @@ void DeviceWorker::sendAction()
     LOrder *item = takeOut();
     if (nullptr != item)
     {
+        memset(&m_comData, 0, sizeof(LZ::ComData));
         if (nullptr != m_modbusDevice)
         {
             if (item->rwType() == LOrder::Write)
             {
-                write(item);
+                m_comData.success = write(item);
             }
             else
             {
-                read(item);
+                m_comData.success = read(item);
             }
         }
         else
         {
+            m_comData.success = false;
+
+            appendMessage("设备未创建");
             emit message("设备还未创建!");
         }
 
-       // item->value().clear();
         if (item->valueCallback() != nullptr)
-            item->valueCallback()(item->value());
+        {
+            item->valueCallback()(m_comData);
+        }
         delete item;
     }
 }
 
-
+void DeviceWorker::appendMessage(const QString& str)
+{
+    if (m_comData.message.isEmpty())
+        m_comData.message.append(str);
+    else
+        m_comData.message.append(QString("\r\n%1").arg(str));
+}
 
 void DeviceWorker::on_start_work()
 {
@@ -218,97 +229,51 @@ LOrder* DeviceWorker::takeOut()
     return order;
 }
 
-void DeviceWorker::on_read_ready()
+
+bool DeviceWorker::read(LOrder* order)
 {
-    auto reply = qobject_cast<QModbusReply *>(sender());
-    if (!reply)
-    {
-        emit readFinished();
-        return;
-    }
-
-    if (reply->error() == QModbusDevice::NoError)
-    {
-        quint64 u64 = 0;
-        const QModbusDataUnit unit = reply->result();
-        QModbusDataUnit::RegisterType table = unit.registerType();
-        if (QModbusDataUnit::HoldingRegisters == table || QModbusDataUnit::InputRegisters == table)
-        {
-            for (int i = 0, total = int(unit.valueCount()); i < total; ++i)
-            {
-                const QString entry = tr("Address: %1, Value: %2").arg(unit.startAddress() + i)
-                                         .arg(QString::number(unit.value(i)));
-                qDebug() << "KKK= " << entry;
-
-                quint64 temp = unit.value(i);
-                u64 += temp << i*16;
-            }
-            qDebug() << "KKK33= " <<u64;
-        }
-        else
-        {
-
-        }
-
-    }
-    else if (reply->error() == QModbusDevice::ProtocolError)
-    {
-        emit message(tr("Read response error: %1 (Mobus exception: 0x%2)").
-                     arg(reply->errorString()).
-                     arg(reply->rawResult().exceptionCode(), -1, 16));
-    }
-    else
-    {
-        emit message(tr("Read response error: %1 (code: 0x%2)").
-                     arg(reply->errorString()).
-                     arg(reply->error(), -1, 16));
-    }
-
-    reply->deleteLater();
-    emit readFinished();
-}
-
-void DeviceWorker::read(LOrder* order)
-{
+    bool ret = false;
     if (auto *reply = m_modbusDevice->sendReadRequest(WriteReadRequest(order), order->serverAddress()))
     {
         if (!reply->isFinished())
         {
             QEventLoop loop;
             connect(this, &DeviceWorker::readFinished, &loop, &QEventLoop::quit);
-            //connect(reply, &QModbusReply::finished, this, &DeviceWorker::on_read_ready);
-            connect(reply, &QModbusReply::finished, this, [=]{
+            connect(reply, &QModbusReply::finished, this, [=, &ret]{
                 auto reply = qobject_cast<QModbusReply *>(sender());
                 if (!reply)
                 {
+                    appendMessage("reply is nullptr");
                     emit readFinished();
                     return;
                 }
 
                 if (reply->error() == QModbusDevice::NoError)
                 {
-                    quint64 u64 = 0;
                     const QModbusDataUnit unit = reply->result();
                     QModbusDataUnit::RegisterType table = unit.registerType();
                     if (QModbusDataUnit::HoldingRegisters == table || QModbusDataUnit::InputRegisters == table)
                     {
+                        quint64 u64 = 0;
                         for (int i = 0, total = int(unit.valueCount()); i < total; ++i)
                         {
                             const QString entry = tr("Address: %1, Value: %2").arg(unit.startAddress() + i)
                                                      .arg(QString::number(unit.value(i)));
-                            //qDebug() << "KKK111= " << entry;
+
+                            appendMessage(entry);
 
                             quint64 temp = unit.value(i);
                             u64 += temp << i*16;
                         }
 
-                        order->setValue(LZLib::instance()->fromLonglong(order->byteType(), QVariant(u64)));
-
-                        //qDebug() << "KKK33= " << u64 << order->value();
+                        m_comData.value = LZLib::instance()->fromLonglong(order->byteType(), QVariant(u64));
+                        appendMessage(QString("原始值：%1， 转换值：%2").arg(u64).arg(m_comData.value.toString()));
+                        appendMessage("read success!");
+                        ret = true;
                     }
                     else
                     {
-
+                        appendMessage("类型出错");
                     }
 
                 }
@@ -317,33 +282,44 @@ void DeviceWorker::read(LOrder* order)
                     emit message(tr("Read response error: %1 (Mobus exception: 0x%2)").
                                  arg(reply->errorString()).
                                  arg(reply->rawResult().exceptionCode(), -1, 16));
+                    appendMessage(tr("Read response error: %1 (Mobus exception: 0x%2)").
+                                  arg(reply->errorString()).
+                                  arg(reply->rawResult().exceptionCode(), -1, 16));
                 }
                 else
                 {
                     emit message(tr("Read response error: %1 (code: 0x%2)").
                                  arg(reply->errorString()).
                                  arg(reply->error(), -1, 16));
+                    appendMessage(tr("Read response error: %1 (code: 0x%2)").
+                                  arg(reply->errorString()).
+                                  arg(reply->error(), -1, 16));
                 }
 
                 //reply->deleteLater();
                 delete reply;
                 emit readFinished();
             });
+
             loop.exec();
         }
         else
         {
+            appendMessage(tr("broadcast replies return immediately"));
             delete reply; // broadcast replies return immediately
         }
     }
     else
     {
+        appendMessage(tr("Read error: ") + m_modbusDevice->errorString());
         emit message(tr("Read error: ") + m_modbusDevice->errorString());
     }
+    return ret;
 }
 
-void DeviceWorker::write(LOrder* order)
+bool DeviceWorker::write(LOrder* order)
 {
+    bool ret = false;
     QVariant writeValue = LZLib::instance()->toLonglong(order->byteType(), order->value());
     QModbusDataUnit writeUnit = WriteReadRequest(order);
     QModbusDataUnit::RegisterType table = writeUnit.registerType();
@@ -375,26 +351,34 @@ void DeviceWorker::write(LOrder* order)
         {
             QEventLoop loop;
             connect(this, &DeviceWorker::writeFinished, &loop, &QEventLoop::quit);
-            connect(reply, &QModbusReply::finished, this, [this, reply]()
+            connect(reply, &QModbusReply::finished, this, [this, reply, &ret](){
+                if (reply->error() == QModbusDevice::ProtocolError)
                 {
-                    if (reply->error() == QModbusDevice::ProtocolError)
-                    {
-                        emit message(tr("Write response error: %1 (Mobus exception: 0x%2)")
-                                     .arg(reply->errorString()).arg(reply->rawResult().exceptionCode(), -1, 16));
-                    } else if (reply->error() != QModbusDevice::NoError)
-                    {
-                        emit message(tr("Write response error: %1 (code: 0x%2)")
-                                     .arg(reply->errorString()).arg(reply->error(), -1, 16));
-                    }
-                    //reply->deleteLater();
-                    delete reply;
-                    emit writeFinished();
+                    emit message(tr("Write response error: %1 (Mobus exception: 0x%2)")
+                                 .arg(reply->errorString()).arg(reply->rawResult().exceptionCode(), -1, 16));
+                    appendMessage(tr("Write response error: %1 (Mobus exception: 0x%2)")
+                                  .arg(reply->errorString()).arg(reply->rawResult().exceptionCode(), -1, 16));
+                } else if (reply->error() != QModbusDevice::NoError)
+                {
+                    emit message(tr("Write response error: %1 (code: 0x%2)")
+                                 .arg(reply->errorString()).arg(reply->error(), -1, 16));
+                    appendMessage(tr("Write response error: %1 (code: 0x%2)")
+                                 .arg(reply->errorString()).arg(reply->error(), -1, 16));
                 }
-            );
+                else
+                {
+                    appendMessage("write success!");
+                    ret = true;
+                }
+                //reply->deleteLater();
+                delete reply;
+                emit writeFinished();
+            });
             loop.exec();
         }
         else
         {
+            appendMessage("broadcast replies return immediately");
             // broadcast replies return immediately
             //reply->deleteLater();
             delete reply;
@@ -403,8 +387,9 @@ void DeviceWorker::write(LOrder* order)
     else
     {
         emit message(tr("Write error: ") + m_modbusDevice->errorString());
+        appendMessage(tr("Write error: ") + m_modbusDevice->errorString());
     }
-
+    return ret;
 }
 QModbusDataUnit DeviceWorker::WriteReadRequest(LOrder* order) const
 {

@@ -57,7 +57,6 @@ void ThreadWorker::on_testing()
 
         emit finished();
         m_isRunning = false;
-        qInfo() << "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
     }
 }
 
@@ -84,40 +83,16 @@ void Thread::testing(std::function<void(Item *p)> cb)
 {
     m_worker->setItem(this);
     m_worker->registerCB(cb);
-    qInfo() << "GGGGGGGGGGGGGGGGGGGGGGGGGG";
     emit sig_testing();
 }
 
 bool Thread::startTest()
 {
-    //QMutexLocker lock(&m_mutex);
+    updateTestingState(TestState::Testing);
 
-    m_testState = TestState::Testing;
+    waitDelayTime();
 
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
-
-
-    int times = 0;
-    while (true)
-    {
-        int sec = qMin(500, m_pChart->m_delay-times);
-        if (sec <= 0)
-            break;
-        QThread::msleep(sec);
-        m_testingTimes++;
-        m_bDrawRect = (m_testingTimes%2 != 0);
-        QTimer::singleShot(0, this, [=]{
-            update();
-        });
-        QCoreApplication::processEvents();
-        times += sec;
-    }
-    m_testState = TestState::Normal;
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Normal);
 
     if (nullptr == m_worker)
     {
@@ -135,9 +110,7 @@ bool Thread::startTest()
             QEventLoop loop;
             connect(m_worker, &ThreadWorker::finished, &loop, &QEventLoop::quit);
             m_threadStoped = true;
-            qInfo() << "AAAAAAAAAAAAAAAAAAAAAAAA";
             loop.exec();
-            qInfo() << "BBBBBBBBBBBBBBBBBBBBBBBBBBB";
             m_threadStoped = false;
         }
         return false;
@@ -196,7 +169,6 @@ void Thread::createPoint()
     p->type = LPType::circuit;
     p->attribute = LPAttribute::input;
     p->chartId = m_pChart->id;
-    p->max = 1000;
     insertPoint(p);
     LPoint *in = p;
     p = new LPoint();

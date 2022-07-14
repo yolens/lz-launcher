@@ -11,6 +11,15 @@ class QSqlQuery;
 const QString ORDER_VALUE_ID = "order";
 const QString VIEW_VALUE_ID = "view";
 
+namespace LZ {
+    struct ComData
+    {
+        bool success;    //读写是否成功
+        QVariant value;  //值
+        QString message; //过程信息
+    };
+}
+
 class LZLIB_EXPORT LDB
 {
 public:
@@ -172,6 +181,7 @@ enum LCType {
     LC_Finish,
     LC_Thread,
     LC_Branch,
+    LC_Panel,
 };
 
 
@@ -300,7 +310,7 @@ const auto SELECT_SQL_LChart = QLatin1String(R"(
     select * from %1
     )").arg(Table_LChart);
 
-
+class LDevice;
 #include <QVariant>
 class LZLIB_EXPORT LOrder : public LDB
 {
@@ -356,8 +366,8 @@ public:
     virtual bool execute(){return false;};
     virtual void write(){};
 
-    void setValueCallback(std::function<void(const QVariant value)> cb) {m_valueCallback = cb;};
-    std::function<void(const QVariant value)> valueCallback() {return m_valueCallback;};
+    void setValueCallback(std::function<void(const LZ::ComData& data)> cb) {m_valueCallback = cb;};
+    std::function<void(const LZ::ComData& data)> valueCallback() {return m_valueCallback;};
 private:
     Type            m_type;
     QString         m_name;
@@ -367,7 +377,7 @@ private:
     RWType          m_rwType = RWType::Write;
     ByteType        m_byteType = ByteType::DEC;
 
-    std::function<void(const QVariant value)> m_valueCallback = nullptr;
+    std::function<void(const LZ::ComData& data)> m_valueCallback = nullptr;
 
 };
 
@@ -430,6 +440,14 @@ const QString Table_LPoint = "LPoint";
 class LZLIB_EXPORT LPoint : public LDB
 {
 public:
+    struct TransferData
+    {
+        QVariant            inValue;
+        QVariant            outValue;
+        LOrder::ByteType    inByteType;
+        LOrder::ByteType    outByteType;
+    };
+public:
     LPoint();
     virtual ~LPoint();
 
@@ -452,9 +470,7 @@ public:
     int             linkId = 0; //点与点的联通，用于线程Thread Item
 
     QRect           rect;
-    int             count = 0;
-    QVariant        outValue;
-    LOrder::ByteType outByteType;
+    TransferData    transferData;
 };
 const auto CREATE_SQL_LPoint = QLatin1String(R"(
     create table IF NOT EXISTS %1(

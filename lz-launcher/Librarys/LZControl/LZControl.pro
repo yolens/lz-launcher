@@ -51,6 +51,7 @@ SOURCES += \
     LZGraphicsView/Items/Item.cpp \
     LZGraphicsView/Items/Line.cpp \
     LZGraphicsView/Items/Node.cpp \
+    LZGraphicsView/Items/Panel.cpp \
     LZGraphicsView/Items/Start.cpp \
     LZGraphicsView/Items/Thread.cpp \
     LZGraphicsView/Items/Virtual.cpp \
@@ -83,6 +84,7 @@ HEADERS += \
     LZGraphicsView/Items/Item.h \
     LZGraphicsView/Items/Line.h \
     LZGraphicsView/Items/Node.h \
+    LZGraphicsView/Items/Panel.h \
     LZGraphicsView/Items/Start.h \
     LZGraphicsView/Items/Thread.h \
     LZGraphicsView/Items/Virtual.h \

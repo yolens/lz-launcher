@@ -53,18 +53,20 @@ public:
     void connectDevice(const DeviceWorker::DeviceInfo& info);
 
 private:
-    void write(LOrder* order);
+    bool write(LOrder* order);
     QModbusDataUnit WriteReadRequest(LOrder* order) const;
-    void read(LOrder* order);
+    bool read(LOrder* order);
     LOrder* takeOut();
 
     void createAction();
     void connectAction(const DeviceWorker::DeviceInfo& info);
     void sendAction();
+
+    void appendMessage(const QString& str);
 public slots:
     void on_errorOccurred(QModbusDevice::Error error);
     void on_stateChanged(QModbusDevice::State state);
-    void on_read_ready();
+
     void on_start_work();
 signals:
     void message(const QString& msg);
@@ -81,6 +83,7 @@ private:
     QSemaphore m_sem;
     Action m_action = Action::Send_action;
     DeviceWorker::DeviceInfo m_info;
+    LZ::ComData m_comData;
 };
 
 #endif // DEVICEWORKER_H

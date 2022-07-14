@@ -41,7 +41,7 @@ void DetectWorker::stopTest()
 
 Item* DetectWorker::nextItemRunning(const int pid)
 {
-    static std::function<void(Item *p)> callback = [=](Item *p){
+    std::function<void(Item *p)> callback = [=](Item *p){
         testing(p);
     };
 
@@ -143,8 +143,7 @@ void DetectWorker::testing(Item *item)
                                 }
 
                                 //把上个元素的值传递到下个元素的点上
-                                destP->outValue = p->outValue;
-                                destP->outByteType = p->outByteType;
+                                destP->transferData = p->transferData;
 
                                 //是否有值触发的流程事件
                                 switch (dest->witchFunction())
@@ -153,7 +152,7 @@ void DetectWorker::testing(Item *item)
                                     break;
                                 case Item::FunctionType::ValueTrigger_func:
                                 {
-                                    const LPoint *nextP = dest->startTest(destP->outValue, destP->outByteType);
+                                    const LPoint *nextP = dest->startTest(destP->transferData.outValue, destP->transferData.outByteType);
                                     if (nullptr != nextP)
                                     {
                                         emit valueTrigger(nextP->id);

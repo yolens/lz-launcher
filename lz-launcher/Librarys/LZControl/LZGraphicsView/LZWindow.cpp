@@ -136,6 +136,10 @@ void LZWindow::createToolbars()
     branchAction->setText("Branch");
     branchAction->setType(LCType::LC_Branch);
 
+    ChartDrag *panelAction = new ChartDrag(m_editToolBar);
+    panelAction->setText("Panel");
+    panelAction->setType(LCType::LC_Panel);
+
     PointDrag *outCircuitAction = new PointDrag(LPType::circuit, LPAttribute::output, m_editToolBar);
     outCircuitAction->setText("outCircuit");
 
@@ -150,6 +154,7 @@ void LZWindow::createToolbars()
     m_editToolBar->addWidget(finishAction);
     m_editToolBar->addWidget(threadAction);
     m_editToolBar->addWidget(branchAction);
+    m_editToolBar->addWidget(panelAction);
     m_editToolBar->addWidget(outCircuitAction);
     m_editToolBar->addWidget(outValueAction);
 

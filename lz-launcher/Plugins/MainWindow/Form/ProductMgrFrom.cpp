@@ -89,14 +89,18 @@ void ProductMgrFrom::addUnitCard(LUnit* p)
         adjustUnitView();
     });
 }
-
+#include <QDebug>
 void ProductMgrFrom::createWindow()
 {
     if (nullptr != m_pWindow)
+    {
+        qInfo() << "BBBBBBBBBBBBBBBBBBBBBBBBB";
         delete m_pWindow;
+    }
     m_pWindow = new LZWindow();
     connect(m_pWindow, &LZWindow::destroyWindow, this, [=]{
         m_pWindow = nullptr;
+        qInfo() << "AAAAAAAAAAAAAAAAAAAAA";
     });
     m_pWindow->show();
 }

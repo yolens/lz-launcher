@@ -340,14 +340,14 @@ void DeviceCom::paintEvent(QPaintEvent * event)
 
 void DeviceCom::on_pushButton_connect_clicked()
 {
+    saveConfig();
     if (ui->checkBox_enable->isChecked())
     {
         m_worker->createDevice();
     }
 }
 
-
-void DeviceCom::on_pushButton_save_clicked()
+void DeviceCom::saveConfig()
 {
     this->setName(ui->lineEdit_name->text());
     this->setPort(ui->lineEdit_port->text());

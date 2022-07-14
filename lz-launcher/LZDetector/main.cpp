@@ -1,13 +1,17 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 
 #include <QApplication>
 #include "PluginManager.h"
 #include "LDB.h"
 #include "LZLib.h"
+#include <QTextCodec>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    QTextCodec::setCodecForLocale(codec);
 
     LDB::init();
     PluginManager::manager()->init();

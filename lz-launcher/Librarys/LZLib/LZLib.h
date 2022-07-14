@@ -4,6 +4,9 @@
 #include "LZLib_global.h"
 #include "LDB.h"
 #include <QColor>
+#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
 
 const QColor Chart_Circuit_Input_Color = QColor(0,0,0);
 const QColor Chart_Circuit_Output_Color = QColor(255,0,0);

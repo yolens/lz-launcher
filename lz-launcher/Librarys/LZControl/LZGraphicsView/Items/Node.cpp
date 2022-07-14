@@ -2,8 +2,8 @@
 #include <QPainter>
 #include "LZLib.h"
 
-Node::Node(QObject *parent)
-    : Item(parent, LCType::LC_Node)
+Node::Node(QObject *parent, LCType type)
+    : Item(parent, type)
 {
     m_typeName = "Node";
     this->setAcceptDrops(true);

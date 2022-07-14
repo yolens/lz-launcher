@@ -34,9 +34,6 @@ void Finish::updatePoint()
 #include <QTimer>
 bool Finish::startTest()
 {
-    m_testState = TestState::Testing;
-    QTimer::singleShot(0, this, [=]{
-        update();
-    });
+    updateTestingState(TestState::Testing);
     return true;
 }

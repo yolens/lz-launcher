@@ -7,7 +7,7 @@ class Node : public Item
 {
     Q_OBJECT
 public:
-    explicit Node(QObject *parent = nullptr);
+    explicit Node(QObject *parent = nullptr, LCType type = LC_Node);
 
     virtual void createPoint() override;
 

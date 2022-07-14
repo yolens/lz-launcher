@@ -24,16 +24,16 @@ void Line::clear()
     LPoint *p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_sourcePointId);
     if (p)
     {
-        p->count--;
-        p->outValue.clear();
-        qInfo() << "YY1----------------------" << p->count;
+        m_pSource->removeLineCount(p->id);
+        memset(&p->transferData, 0, sizeof(LPoint::TransferData));
+        qInfo() << "YY1----------------------" << getLineCount(p->id);//p->count;
     }
     p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_destPointId);
     if (p)
     {
-        p->count--;
-        p->outValue.clear();
-        qInfo() << "YY2----------------------" << p->count;
+        m_pDest->removeLineCount(p->id);
+        memset(&p->transferData, 0, sizeof(LPoint::TransferData));
+        qInfo() << "YY2----------------------" << getLineCount(p->id);//p->count;
     }
 
     emit removeLine();
@@ -47,7 +47,10 @@ void Line::setSource(Item *item, const bool adjust)
     m_pChart->m_sourcePointId = item->getCurrentPointId();
     LPoint *p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_sourcePointId);
     if (p)
-        p->count++;
+    {
+        //p->count++;
+        m_pSource->addLineCount(p->id);
+    }
     item->addLine(this);
     if (adjust)
         onAdjust();
@@ -63,7 +66,10 @@ void Line::setDest(Item *item, const bool adjust)
     m_pChart->m_destPointId = item->getCurrentPointId();
     LPoint *p = Plugin::DataCenterPlugin()->getPoint(m_pChart->m_destPointId);
     if (p)
-        p->count++;
+    {
+        //p->count++;
+        m_pDest->addLineCount(p->id);
+    }
     item->addLine(this);
     if (adjust)
         onAdjust();
